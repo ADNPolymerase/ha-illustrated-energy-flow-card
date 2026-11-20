@@ -278,6 +278,38 @@ const draw = (config, states = base, lang = "en") => {
   check("the element gets hass even when the card does not redraw", el.hass, quiet);
 }
 
+// ── Drawings that follow an on/off state, and drawings too big for the box ───
+{
+  const card = new Card();
+  card.setConfig({ consumers: [{ entity: "sensor.ev", type: "drying_rack" }, { entity: "sensor.plug", type: "drying_rack", appliance: { state_entity: "binary_sensor.rack" } }] });
+  card.hass = hassOf({ ...base, "sensor.ev": S(120), "sensor.plug": S(120) });
+  const r0 = card._ac.get("c0"), r1 = card._ac.get("c1");
+  const id = r0 && r0.el.cfg.state_entity;
+  check("on/off drawing: a made-up state entity", typeof id === "string" && id.startsWith("binary_sensor.ie_flow_"), true);
+  check("on/off drawing: power still the consumer's", r0 && r0.el.cfg.power_entity, "sensor.ev");
+  check("on/off drawing: on when it draws power", r0 && r0.el.hass.states[id] && r0.el.hass.states[id].state, "on");
+  check("on/off drawing: the real states are still there", r0 && r0.el.hass.states["sensor.ev"].state, "120");
+  check("on/off drawing: the config's own state entity wins", r1 && r1.el.cfg.state_entity, "binary_sensor.rack");
+  check("on/off drawing: no made-up state when the config names one", r1 && r1.el.hass === card._hass, true);
+  const since = r0.el.hass.states[id].last_changed;
+  card.hass = hassOf({ ...base, "sensor.ev": S(110), "sensor.plug": S(120) });
+  check("on/off drawing: last_changed kept while the state holds", r0.el.hass.states[id].last_changed, since);
+  card.hass = hassOf({ ...base, "sensor.ev": S(0), "sensor.plug": S(120) });
+  check("on/off drawing: off at no power", r0.el.hass.states[id].state, "off");
+
+  const fake = (mw, mh) => {
+    const machine = { getBoundingClientRect: () => ({ left: 16, top: 16, width: mw, height: mh }) };
+    return { style: {}, shadowRoot: { querySelector: () => machine }, getBoundingClientRect: () => ({ left: 0, top: 0, width: 130, height: 152 }) };
+  };
+  const wide = fake(200, 112);
+  card._fitAppliance(wide);
+  check("wide drawing: shrunk to the box width", wide.style.transform, "scale(0.650)");
+  check("wide drawing: centred", wide.style.left === "-10.4px" && wide.style.top === "7.2px", true);
+  const usual = fake(96, 108);
+  card._fitAppliance(usual);
+  check("usual drawing: left alone", !usual.style.transform && !usual.style.left, true);
+}
+
 // ── Redraw only when a watched entity moves ──────────────────────────────────
 {
   const card = new Card();

@@ -6,7 +6,7 @@
 // panel, string by string or as a total.
 // https://github.com/ADNPolymerase/ha-illustrated-energy-flow-card
 
-const IE_VERSION = "0.2.0";
+const IE_VERSION = "0.2.1";
 const IE_TAG = "illustrated-energy-flow-card";
 const IE_EDITOR_TAG = "illustrated-energy-flow-card-editor";
 
@@ -43,6 +43,13 @@ const IE_METERS = ["box", "linky", "dome"];
 const IE_SOLAR_VIEWS = ["panel", "string", "total"];
 const IE_MAX_STRINGS = 6;
 const IE_MAX_CONSUMERS = 12;
+// HA Appliance Card types whose drawing follows an on/off state.
+const IE_ONOFF_TYPES = ["drying_rack"];
+// A consumer drawing more than this is on (W).
+const IE_ON_W = 5;
+// The box a HA Appliance Card drawing sits in.
+const IE_AC_W = 130;
+const IE_AC_H = 108;
 
 // ---- src/01-i18n.js
 // Every text the card and its editor show, in the six languages. Missing keys
@@ -1587,21 +1594,62 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     for (const { key, cm } of list) {
       const holder = this._wrap.querySelector(`[data-ac="${key}"]`);
       if (!holder) continue;
-      const conf = { type: "custom:ha-appliance-card", appliance_type: cm.type, state_entity: cm.entity, power_entity: cm.entity, show_name: false, show_state: false, transparent: true, hidden_lines: ["power"], ...(cm.appliance || {}) };
-      const sig = JSON.stringify(conf);
       let rec = this._ac.get(key);
       if (!rec) {
         rec = { el: document.createElement("ha-appliance-card"), sig: "" };
         this._ac.set(key, rec);
       }
+      const extra = cm.appliance || {};
+      // Some drawings follow an on/off state, not a power (a wall drying rack
+      // unfolds on "on"): they get one made from the consumer's power, unless
+      // the config names its own state entity.
+      const synth = IE_ONOFF_TYPES.includes(cm.type) && !extra.state_entity ? `binary_sensor.ie_flow_${key}` : "";
+      const conf = { type: "custom:ha-appliance-card", appliance_type: cm.type, state_entity: synth || cm.entity, power_entity: cm.entity, show_name: false, show_state: false, transparent: true, hidden_lines: ["power"], ...extra };
+      const sig = JSON.stringify(conf);
       if (rec.sig !== sig) {
         try { rec.el.setConfig(conf); rec.sig = sig; } catch (e) { rec.sig = ""; }
       }
-      rec.el.hass = this._hass;
-      holder.appendChild(rec.el);
+      rec.el.hass = synth ? this._synthHass(rec, synth, cm.w) : this._hass;
+      if (rec.el.parentNode !== holder) holder.appendChild(rec.el);
       keep.add(key);
+      this._fitAppliance(rec.el);
     }
     for (const k of [...this._ac.keys()]) if (!keep.has(k)) this._ac.delete(k);
+  }
+
+  _synthHass(rec, id, w) {
+    const on = w !== null && w > IE_ON_W;
+    if (rec.on !== on) { rec.on = on; rec.since = new Date().toISOString(); }
+    const h = this._hass || {};
+    return { ...h, states: { ...(h.states || {}), [id]: { entity_id: id, state: on ? "on" : "off", attributes: {}, last_changed: rec.since, last_updated: rec.since } } };
+  }
+
+  // A drawing wider or taller than the others (an HRV and its ducts) is
+  // shrunk and centred in the same box.
+  _fitAppliance(el) {
+    const run = () => {
+      const m = el.shadowRoot && el.shadowRoot.querySelector(".machine");
+      if (!m || typeof el.getBoundingClientRect !== "function") return;
+      const hr = el.getBoundingClientRect();
+      if (!hr.width) return;
+      const t = hr.width / IE_AC_W;
+      const r = m.getBoundingClientRect();
+      const mx = (r.left - hr.left) / t, my = (r.top - hr.top) / t, mw = r.width / t, mh = r.height / t;
+      const cur = el._ieFit || 1;
+      // Undo the scale already applied to read the drawing at its own size.
+      const W = mw / cur, H = mh / cur, X = mx / cur, Y = my / cur;
+      const s = Math.min(1, IE_AC_W / W, IE_AC_H / H);
+      if (s >= 0.999) {
+        if (el._ieFit) { el.style.transform = el.style.transformOrigin = el.style.left = el.style.top = ""; el._ieFit = 0; }
+        return;
+      }
+      el._ieFit = s;
+      el.style.transformOrigin = "0 0";
+      el.style.transform = `scale(${s.toFixed(3)})`;
+      el.style.left = `${((IE_AC_W - W * s) / 2 - X * s).toFixed(1)}px`;
+      el.style.top = `${((IE_AC_H - H * s) / 2 - Y * s).toFixed(1)}px`;
+    };
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(run); else run();
   }
 
   // Scale the stage to the width of the card, never past 130 %.
@@ -1718,12 +1766,12 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       const cm = m.consumers[i];
       const n = L.consumers.length;
       const a = { x: L.house.right + 3, y: L.house.by - 30 + (n > 1 ? (i - (n - 1) / 2) * Math.min(9, 30 / (n - 1)) : 0) }, b = { x: p.x - 54, y: p.y };
-      const idle = !(cm.w !== null && cm.w > 5);
+      const idle = !(cm.w !== null && cm.w > IE_ON_W);
       svg += `<g${dimOn && idle ? ' class="dim"' : ""}>${ieFlow(ieCubic(a.x, a.y, a.x + 46, a.y, b.x - 46, b.y, b.x, b.y), cm.w, IE_COLORS.load, rated, fo)}</g>`;
       p.children.forEach((q, j) => {
         const ch = cm.children[j];
         const ca = { x: p.x + 52, y: p.y }, cb = { x: q.x - 54, y: q.y };
-        const cidle = !(ch.w !== null && ch.w > 5);
+        const cidle = !(ch.w !== null && ch.w > IE_ON_W);
         svg += `<g${dimOn && cidle ? ' class="dim"' : ""}>${ieFlow(ieCubic(ca.x, ca.y, ca.x + 50, ca.y, cb.x - 50, cb.y, cb.x, cb.y), ch.w, IE_COLORS.load, rated, fo)}</g>`;
       });
     });
@@ -1764,7 +1812,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     const acReady = typeof customElements !== "undefined" && !!customElements.get("ha-appliance-card");
     const wantAc = [];
     const consumerNode = (pos, cm, key) => {
-      const on = cm.w !== null && cm.w > 5;
+      const on = cm.w !== null && cm.w > IE_ON_W;
       let html;
       if (cm.type !== "generic" && acReady) {
         html = `<div class="ie-ac" data-ac="${esc(key)}"></div>`;

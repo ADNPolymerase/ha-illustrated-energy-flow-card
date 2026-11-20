@@ -95,7 +95,7 @@ consumers:
 | `home.power_entity` | calculée | Consommation de la maison |
 | `consumers` | | Liste : `entity`, `name`, `type`, `appliance`, `children` |
 | `consumers[].type` | `generic` | Tout type de HA Appliance Card (`washer`, `printer_3d`, `fridge`, `network`, `ups`...), ou `ev_charger`, `heat_pump`, `water_heater`, `generic` sans elle |
-| `consumers[].appliance` | | Options supplémentaires de HA Appliance Card pour le dessin |
+| `consumers[].appliance` | | Options supplémentaires de HA Appliance Card pour le dessin, par exemple `state_entity` pour un dessin qui suit un état marche/arrêt |
 | `consumers[].children` | | Consommateurs alimentés par celui-ci (un niveau) |
 | `panel_peak` | `450` | Puissance crête d'un panneau (W), pour la lueur et la vitesse du flux |
 | `rated_power` | `6000` | Puissance du flux le plus rapide (W) |

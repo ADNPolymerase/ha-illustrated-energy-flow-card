@@ -95,7 +95,7 @@ consumers:
 | `home.power_entity` | computed | Home consumption |
 | `consumers` | | List: `entity`, `name`, `type`, `appliance`, `children` |
 | `consumers[].type` | `generic` | Any HA Appliance Card type (`washer`, `printer_3d`, `fridge`, `network`, `ups`...), or `ev_charger`, `heat_pump`, `water_heater`, `generic` without it |
-| `consumers[].appliance` | | Extra HA Appliance Card options for the drawing |
+| `consumers[].appliance` | | Extra HA Appliance Card options for the drawing, such as `state_entity` for a drawing that follows an on/off state |
 | `consumers[].children` | | Consumers fed by this one (one level) |
 | `panel_peak` | `450` | Peak power of one panel (W), for the glow and the flow speed |
 | `rated_power` | `6000` | Power of the fastest flow (W) |
