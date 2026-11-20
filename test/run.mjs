@@ -115,8 +115,8 @@ const src = fs.readFileSync(dist, "utf8");
   check("strings do not overlap", L.groups[0].x + L.groups[0].width < L.groups[1].x, true);
   check("inverter below the panels", L.inv.y - 30 > L.bus, true);
   check("house below the inverter", L.house.top > L.inv.y + 30, true);
-  const gaps = L.consumers.slice(1).map((c, i) => c.y - L.consumers[i].y);
-  check("consumers far enough apart for their labels", Math.min(...gaps) >= 165, true);
+  const sameCol = L.consumers.flatMap((c, i) => L.consumers.slice(i + 1).filter((d) => d.x === c.x).slice(0, 1).map((d) => d.y - c.y));
+  check("consumers far enough apart for their labels", sameCol.length > 0 && Math.min(...sameCol) >= 165, true);
   check("first consumer below the panels", L.consumers[0].y - 54 > L.bus, true);
   check("battery below the grid", L.battery.y - L.grid.y >= 170, true);
   check("height covers the last consumer", L.height >= L.consumers[4].y + 54 + 58, true);
@@ -276,6 +276,43 @@ const draw = (config, states = base, lang = "en") => {
   const quiet = hassOf({ ...base, "sensor.ev": S(10), "sensor.unrelated": S(1) });
   card.hass = quiet;
   check("the element gets hass even when the card does not redraw", el.hass, quiet);
+}
+
+// ── Editor: the consumer layout ──────────────────────────────────────────────
+{
+  check("editor: layout defaults to auto", Editor.toForm({}).consumers_layout, "auto");
+  check("editor: layout read back", Editor.toForm({ consumers_layout: "compact" }).consumers_layout, "compact");
+  check("editor: auto stays out of the YAML", "consumers_layout" in Editor.fromForm({ ...Editor.toForm({}), consumers_layout: "auto" }, {}), false);
+  check("editor: a chosen layout written", Editor.fromForm({ ...Editor.toForm({}), consumers_layout: "columns" }, {}).consumers_layout, "columns");
+}
+
+// ── Consumer layouts: one column, two staggered columns, compact ─────────────
+{
+  const five = (extra) => ({ ...cfg, ...extra, consumers: ["sensor.ev", "sensor.plug", "sensor.p1", "sensor.p2", "sensor.hp"].map((e) => ({ entity: e })) });
+  const lay = (c) => Card.computeLayout(Card.computeModel(hassOf(base), c), c);
+  const auto = lay(five());
+  check("layout: auto takes two columns past three consumers", auto.cmode, "columns");
+  check("layout: two columns widen the stage", auto.width, 560 + 150);
+  check("layout: consumers alternate between the columns", auto.consumers.map((p) => p.col).join(""), "01010");
+  check("layout: half a step between consumers", auto.consumers[1].y - auto.consumers[0].y, 95);
+  const col = lay(five({ consumers_layout: "column" }));
+  check("layout: column keeps one column", col.consumers.every((p) => p.x === col.consumers[0].x) && col.width === 560, true);
+  check("layout: two columns are less tall than one", auto.height < col.height, true);
+  const cmp = lay(five({ consumers_layout: "compact" }));
+  check("layout: compact keeps one column, closer together", cmp.consumers[1].y - cmp.consumers[0].y, 130);
+  check("layout: compact is less tall than one column", cmp.height < col.height, true);
+  check("layout: three consumers stay in one column", lay({ ...cfg, consumers: ["sensor.ev", "sensor.plug", "sensor.p1"] }).cmode, "column");
+  const chained = { ...cfg, consumers_layout: "columns", consumers: [{ entity: "sensor.ev", children: ["sensor.plug"] }, "sensor.p1", "sensor.p2", "sensor.hp"] };
+  check("layout: a chain keeps one column", lay(chained).cmode, "column");
+  check("layout: unknown value read as auto", lay(five({ consumers_layout: "zigzag" })).cmode, "columns");
+  const card = new Card();
+  card.setConfig(five({ consumers_layout: "compact" }));
+  card.hass = hassOf(base);
+  contains("layout: compact nodes marked", card._wrap.innerHTML, 'class="node cmp');
+  const c2 = new Card();
+  c2.setConfig(five());
+  c2.hass = hassOf(base);
+  check("layout: flows to the second column cross under the first", (c2._wrap.innerHTML.match(/d="M[^"]*C[^"]*C[^"]*C[^"]*"/g) || []).length >= 2, true);
 }
 
 // ── Drawings that follow an on/off state, and drawings too big for the box ───

@@ -28,6 +28,21 @@ function ieLine(x0, y0, x1, y1) {
   return ieCubic(x0, y0, x0 + (x1 - x0) / 3, y0 + (y1 - y0) / 3, x0 + (2 * (x1 - x0)) / 3, y0 + (2 * (y1 - y0)) / 3, x1, y1);
 }
 
+// Several segments end to end, drawn and sampled as one path.
+function ieChain(...segs) {
+  const total = segs.reduce((a, g) => a + g.len, 0) || 1;
+  const d = segs.map((g, i) => (i ? g.d.replace(/^M [^C]+/, "") : g.d)).join(" ");
+  const at = (t) => {
+    let r = Math.max(0, Math.min(1, t)) * total;
+    for (const g of segs) {
+      if (r <= g.len || g === segs[segs.length - 1]) return g.at(g.len ? Math.min(1, r / g.len) : 1);
+      r -= g.len;
+    }
+    return segs[0].at(0);
+  };
+  return { d, len: total, at };
+}
+
 // The same path, run the other way: a flow always goes source to destination.
 function ieReverse(spec) {
   const m = spec.d.match(/-?[\d.]+/g).map(Number);

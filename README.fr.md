@@ -97,6 +97,7 @@ consumers:
 | `consumers[].type` | `generic` | Tout type de HA Appliance Card (`washer`, `printer_3d`, `fridge`, `network`, `ups`...), ou `ev_charger`, `heat_pump`, `water_heater`, `generic` sans elle |
 | `consumers[].appliance` | | Options supplémentaires de HA Appliance Card pour le dessin, par exemple `state_entity` pour un dessin qui suit un état marche/arrêt |
 | `consumers[].children` | | Consommateurs alimentés par celui-ci (un niveau) |
+| `consumers_layout` | `auto` | `column`, `columns` (deux colonnes décalées, bien moins haute) ou `compact` (dessins plus petits et plus serrés). `auto` passe en deux colonnes au-delà de trois consommateurs, une colonne quand un consommateur en alimente d'autres |
 | `panel_peak` | `450` | Puissance crête d'un panneau (W), pour la lueur et la vitesse du flux |
 | `rated_power` | `6000` | Puissance du flux le plus rapide (W) |
 | `flow_style` | `arrows` | `arrows` ou `dashes` |

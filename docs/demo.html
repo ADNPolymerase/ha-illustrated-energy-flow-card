@@ -121,6 +121,7 @@ function config() {
     type: "custom:illustrated-energy-flow-card",
     title: { en: "Energy", fr: "Énergie", de: "Energie", es: "Energía", it: "Energia", nl: "Energie" }[st.lang],
     flow_style: st.flow,
+    ...(q.get("layout") ? { consumers_layout: q.get("layout") } : {}),
     grid: { power_entity: "sensor.grid_power", meter: st.meter, ...(st.opt.has("pylon") ? { pylon: true } : {}) },
     solar: { view: st.view, ...(st.opt.has("micro") ? { microinverters: true } : st.opt.has("optim") ? { optimizers: true } : {}), strings: STR.map((g, gi) => ({ name: names[gi], panels: Array.from({ length: g.n }, (_, i) => `sensor.panel_${gi + 1}_${i + 1}_power`) })) },
     consumers: [],

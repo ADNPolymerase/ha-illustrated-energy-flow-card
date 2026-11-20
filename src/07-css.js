@@ -30,5 +30,7 @@ const IE_CSS = `
   /* HA Appliance Card draws its picture 16 px down and 17 px in: lifted so it
      sits where the other drawings sit. */
   .node .ie-ac > ha-appliance-card { position: absolute; left: 0; top: -16px; width: 130px; }
+  /* Compact consumers: the drawing at three quarters, its labels unchanged. */
+  .node.cmp > .machine, .node.cmp > .ie-ac { transform: scale(.75); transform-origin: 50% 0; margin-bottom: -27px; }
   @media (prefers-reduced-motion: reduce) { .stage * { animation: none !important; } }
 `;

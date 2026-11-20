@@ -6,6 +6,12 @@ const IE_W = 560;
 const IE_PYLON_W = 110;
 const IE_CHILD_W = 200;
 const IE_STEP = 172;
+// Two staggered columns: each consumer half a step below the one before.
+const IE_COL2_W = 150;
+const IE_STAGGER = 95;
+// Smaller consumer drawings, closer together.
+const IE_COMPACT_K = 0.75;
+const IE_COMPACT_STEP = 130;
 
 let IE_DRAW = null;
 function ieDrawings() {
@@ -25,13 +31,18 @@ function ieLayout(model, cfg) {
   const pylon = model.hasGrid && !!(c.grid && c.grid.pylon);
   const chains = model.consumers.some((k) => k.children.length);
   const ox = pylon ? IE_PYLON_W : 0;
+  // Past three consumers the column gets tall: two staggered columns then,
+  // unless a consumer feeds others (their column already takes that place).
+  const askLayout = IE_CONSUMER_LAYOUTS.includes(c.consumers_layout) ? c.consumers_layout : "auto";
+  let cmode = askLayout === "auto" ? (model.consumers.length > 3 && !chains ? "columns" : "column") : askLayout;
+  if (cmode === "columns" && (chains || model.consumers.length < 2)) cmode = "column";
   const houseX = 280 + ox, leftX = 70 + ox, rightX = 490 + ox, childX = rightX + IE_CHILD_W;
   // A string given only by its power, or a solar total alone, still gets a
   // few panels drawn: they stand for it and carry no value of their own.
   let groups = model.strings.map((s) => ({ ...s, drawn: s.panels.length || 3, decorative: !s.panels.length }));
   if (!groups.length && model.hasSolar) groups = [{ name: "", index: 0, entity: "", panels: [], w: model.pv, drawn: 4, decorative: true }];
 
-  const L = { view, groups: [], width: IE_W + ox + (chains ? IE_CHILD_W : 0), micro: !!model.micro, optimizers: !!model.optimizers };
+  const L = { view, groups: [], width: IE_W + ox + (chains ? IE_CHILD_W : 0) + (cmode === "columns" ? IE_COL2_W : 0), micro: !!model.micro, optimizers: !!model.optimizers, cmode };
   let solarBottom = 0;
   if (groups.length) {
     const G = groups.length;
@@ -86,23 +97,35 @@ function ieLayout(model, cfg) {
   L.pylon = pylon && L.grid ? { x: 66, y: L.grid.y } : null;
 
   // Right: the consumers in a column centred on the house, kept below the
-  // panels; the ones a consumer feeds stand in a second column beside it.
-  const blocks = model.consumers.map((k) => Math.max(1, k.children.length) * IE_STEP);
-  const totalH = blocks.reduce((a, b) => a + b, 0);
+  // panels; the ones a consumer feeds stand in a second column beside it. In
+  // two columns they alternate, half a step apart, so the flows to the second
+  // column pass between the drawings of the first.
   const minY = (L.groups.length ? solarBottom : 0) + 74;
-  let cursor = Math.max(minY, by - 50 - (totalH - IE_STEP) / 2);
-  L.consumers = model.consumers.map((k, i) => {
-    const pos = { x: rightX, y: cursor + (blocks[i] - IE_STEP) / 2, children: k.children.map((_, j) => ({ x: childX, y: cursor + j * IE_STEP })) };
-    cursor += blocks[i];
-    return pos;
-  });
+  if (cmode === "columns") {
+    const span = (model.consumers.length - 1) * IE_STAGGER;
+    const top = Math.max(minY, by - 50 - span / 2);
+    L.consumers = model.consumers.map((k, i) => ({ x: rightX + (i % 2) * IE_COL2_W, y: top + i * IE_STAGGER, col: i % 2, children: [] }));
+  } else {
+    const step = cmode === "compact" ? IE_COMPACT_STEP : IE_STEP;
+    const blocks = model.consumers.map((k) => Math.max(1, k.children.length) * step);
+    const totalH = blocks.reduce((a, b) => a + b, 0);
+    let cursor = Math.max(minY, by - 50 - (totalH - step) / 2);
+    L.consumers = model.consumers.map((k, i) => {
+      const pos = { x: rightX, y: cursor + (blocks[i] - step) / 2, col: 0, children: k.children.map((_, j) => ({ x: childX, y: cursor + j * step })) };
+      cursor += blocks[i];
+      return pos;
+    });
+  }
 
+  // How far a consumer's drawing reaches: its left edge, its bottom.
+  const cBottom = cmode === "compact" ? 82 : 112;
+  L.consumerHalf = cmode === "compact" ? 40 : 54;
   const bottoms = [by + 52];
   if (L.grid) bottoms.push(L.grid.y + 54 + 58);
   if (L.battery) bottoms.push(L.battery.y + 54 + 58);
   for (const k of L.consumers) {
-    bottoms.push(k.y + 54 + 58);
-    for (const ch of k.children) bottoms.push(ch.y + 54 + 58);
+    bottoms.push(k.y + cBottom);
+    for (const ch of k.children) bottoms.push(ch.y + cBottom);
   }
   L.height = Math.ceil(Math.max(...bottoms) + 6);
   return L;
@@ -368,15 +391,23 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       svg += ieFlow(spec, m.bat, m.bat !== null && m.bat > 0 ? IE_COLORS.discharge : IE_COLORS.charge, rated, fo);
       if (m.bat !== null && Math.abs(m.bat) >= 1) svg += lbl((a.x + b.x) / 2, (a.y + b.y) / 2 + 16, `${t(m.bat > 0 ? "discharging" : "charging")} ${fmt(m.bat)}`);
     }
+    const half = L.consumerHalf || 54;
     L.consumers.forEach((p, i) => {
       const cm = m.consumers[i];
       const n = L.consumers.length;
-      const a = { x: L.house.right + 3, y: L.house.by - 30 + (n > 1 ? (i - (n - 1) / 2) * Math.min(9, 30 / (n - 1)) : 0) }, b = { x: p.x - 54, y: p.y };
+      const a = { x: L.house.right + 3, y: L.house.by - 30 + (n > 1 ? (i - (n - 1) / 2) * Math.min(9, 30 / (n - 1)) : 0) }, b = { x: p.x - half, y: p.y };
+      let spec;
+      if (p.col) {
+        // Into the second column: under the first column's drawing above,
+        // across, then up to the consumer.
+        const x0 = p.x - IE_COL2_W, gy = p.y + 19;
+        spec = ieChain(ieCubic(a.x, a.y, a.x + 46, a.y, x0 - 116, gy, x0 - 70, gy), ieLine(x0 - 70, gy, x0 + 62, gy), ieCubic(x0 + 62, gy, x0 + 80, gy, b.x - 14, b.y, b.x, b.y));
+      } else spec = ieCubic(a.x, a.y, a.x + 46, a.y, b.x - 46, b.y, b.x, b.y);
       const idle = !(cm.w !== null && cm.w > IE_ON_W);
-      svg += `<g${dimOn && idle ? ' class="dim"' : ""}>${ieFlow(ieCubic(a.x, a.y, a.x + 46, a.y, b.x - 46, b.y, b.x, b.y), cm.w, IE_COLORS.load, rated, fo)}</g>`;
+      svg += `<g${dimOn && idle ? ' class="dim"' : ""}>${ieFlow(spec, cm.w, IE_COLORS.load, rated, fo)}</g>`;
       p.children.forEach((q, j) => {
         const ch = cm.children[j];
-        const ca = { x: p.x + 52, y: p.y }, cb = { x: q.x - 54, y: q.y };
+        const ca = { x: p.x + half - 2, y: p.y }, cb = { x: q.x - half, y: q.y };
         const cidle = !(ch.w !== null && ch.w > IE_ON_W);
         svg += `<g${dimOn && cidle ? ' class="dim"' : ""}>${ieFlow(ieCubic(ca.x, ca.y, ca.x + 50, ca.y, cb.x - 50, cb.y, cb.x, cb.y), ch.w, IE_COLORS.load, rated, fo)}</g>`;
       });
@@ -390,8 +421,8 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     svg += `</svg>`;
 
     /* ---- the nodes drawn by HA Appliance Card ---- */
-    const node = (pos, html, name, value, sub, entity, inactive) =>
-      `<div class="node${dimOn && inactive ? " dim" : ""}${entity && c.clickable !== false ? " hit" : ""}"${entity && c.clickable !== false ? ` data-entity="${esc(entity)}"` : ""} style="left:${f1(pos.x - 65)}px;top:${f1(pos.y - 54)}px">${html}<div class="nm">${esc(name)}</div><div class="vl">${esc(value)}</div>${sub ? `<div class="sb">${esc(sub)}</div>` : ""}</div>`;
+    const node = (pos, html, name, value, sub, entity, inactive, compact) =>
+      `<div class="node${compact ? " cmp" : ""}${dimOn && inactive ? " dim" : ""}${entity && c.clickable !== false ? " hit" : ""}"${entity && c.clickable !== false ? ` data-entity="${esc(entity)}"` : ""} style="left:${f1(pos.x - 65)}px;top:${f1(pos.y - (compact ? 54 * IE_COMPACT_K : 54))}px">${html}<div class="nm">${esc(name)}</div><div class="vl">${esc(value)}</div>${sub ? `<div class="sb">${esc(sub)}</div>` : ""}</div>`;
     let nodes = "";
     if (L.pylon) nodes += node({ x: L.pylon.x, y: L.pylon.y }, iePylonHtml(m.grid !== null && Math.abs(m.grid) >= 1), "", "", "", "", false);
     if (L.grid) {
@@ -427,7 +458,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       else if (cm.type === "heat_pump") html = D.hp.draw("", { hpMode: on ? "space_heating" : "idle", noTank: true });
       else if (cm.type === "water_heater") html = D.wh.draw(on ? "heating" : "", { tankTemp: on ? 55 : 40 });
       else html = iePlugHtml(on);
-      return node(pos, html, cm.name || t(cm.type), fmt(cm.w), cm.w === null ? t("unavailable") : "", cm.entity, !on);
+      return node(pos, html, cm.name || t(cm.type), fmt(cm.w), cm.w === null ? t("unavailable") : "", cm.entity, !on, L.cmode === "compact");
     };
     L.consumers.forEach((p, i) => {
       const cm = m.consumers[i];

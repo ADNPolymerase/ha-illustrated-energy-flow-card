@@ -47,6 +47,7 @@ function ieToForm(cfg, counts) {
     battery_reserve: b.reserve === undefined || b.reserve === null ? "" : b.reserve, battery_name: b.name || "",
     home_power: h.power_entity || "", home_name: h.name || "",
     strings_count: n.strings, consumers_count: n.consumers,
+    consumers_layout: IE_CONSUMER_LAYOUTS.includes(c.consumers_layout) ? c.consumers_layout : "auto",
   };
   const strings = Array.isArray(s.strings) ? s.strings : [];
   for (let i = 0; i < IE_MAX_STRINGS; i++) {
@@ -79,6 +80,7 @@ function ieFromForm(d, prev) {
   // Defaults stay out of the YAML: only what differs is written.
   set(out, "language", d.language && d.language !== "auto" ? d.language : "");
   set(out, "flow_style", d.flow_style === "dashes" ? "dashes" : "");
+  set(out, "consumers_layout", IE_CONSUMER_LAYOUTS.includes(d.consumers_layout) && d.consumers_layout !== "auto" ? d.consumers_layout : "");
   for (const k of ["animate", "dim_inactive", "clickable"]) set(out, k, d[k] === false ? false : "");
   set(out, "decimals", Number(d.decimals) > 0 ? Number(d.decimals) : "");
   set(out, "rated_power", Number(d.rated_power) > 0 && Number(d.rated_power) !== IE_DEFAULTS.rated_power ? Number(d.rated_power) : "");
@@ -254,7 +256,13 @@ function ieSchema(hass, lang, data) {
       grid2([bool("battery_invert", t("e_invert")), txt("battery_name", t("e_name"))]),
     ]),
     exp(t("e_home"), [grid2([ent("home_power", power, t("e_home_power")), txt("home_name", t("e_name"))])]),
-    exp(t("e_consumers"), [num("consumers_count", t("e_consumers_count"), 0, IE_MAX_CONSUMERS, 1), ...consumers]),
+    exp(t("e_consumers"), [
+      grid2([
+        num("consumers_count", t("e_consumers_count"), 0, IE_MAX_CONSUMERS, 1),
+        sel("consumers_layout", t("e_layout"), IE_CONSUMER_LAYOUTS.map((v) => ({ value: v, label: t(`e_layout_${v}`) }))),
+      ]),
+      ...consumers,
+    ]),
   ];
 }
 
