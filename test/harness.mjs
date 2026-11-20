@@ -61,7 +61,8 @@ export async function loadCard(modulePath) {
     define: (n, c) => registry.set(n, c),
     get:    n => registry.get(n),
   };
-  globalThis.document = { createElement: tag => new FakeNode(tag) };
+  // A registered tag gives an instance of its class, as in a browser.
+  globalThis.document = { createElement: tag => (registry.has(tag) ? new (registry.get(tag))() : new FakeNode(tag)) };
   globalThis.window   = globalThis;
   // node ships a read-only navigator that already has .language, leave it be.
   await import(modulePath);

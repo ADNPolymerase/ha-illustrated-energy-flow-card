@@ -14,7 +14,7 @@
 
 Une carte de flux d'énergie dont les éléments sont des **appareils dessinés et animés** plutôt que des icônes dans des ronds, et qui montre le solaire **panneau par panneau**.
 
-> **Bêta (0.1.x).** La mise en page et les dessins vont encore évoluer. Vos retours sont les bienvenus dans les issues.
+> **Bêta (0.x).** La mise en page et les dessins vont encore évoluer. Vos retours sont les bienvenus dans les issues.
 
 ![Illustrated Energy Flow Card](https://raw.githubusercontent.com/ADNPolymerase/ha-illustrated-energy-flow-card/main/docs/screenshot.fr.png)
 
@@ -23,11 +23,14 @@ Une carte de flux d'énergie dont les éléments sont des **appareils dessinés 
 - **Le solaire panneau par panneau** : chaque panneau a son propre flux vers sa string, à sa propre vitesse, avec ses watts écrits dessus. Un panneau à l'ombre ralentit seul et s'assombrit. Vue par panneau, par string ou en total.
 - **Le réseau dans les deux sens** : un capteur signé, ou un capteur d'import et un d'export. Le flux change de sens et de couleur.
 - **La batterie** : charge et décharge, avec son niveau sur l'écran de la batterie dessinée.
-- **Des consommateurs nommés** : borne de recharge, pompe à chaleur, ballon d'eau chaude, ou une prise connectée pour le reste.
+- **Des consommateurs nommés** : n'importe lequel des 72 dessins de [HA Appliance Card](https://github.com/ADNPolymerase/ha-appliance-card) (lave-linge, imprimante 3D, frigo, box, onduleur...) quand elle est installée, sinon une borne de recharge, une pompe à chaleur, un ballon d'eau chaude ou une prise connectée. Un consommateur peut en alimenter d'autres (un onduleur qui alimente la box et un mini PC).
+- **Micro-onduleurs ou optimiseurs** : un petit boîtier sous chaque panneau, et plus d'onduleur central avec des micro-onduleurs.
+- **Batterie sur l'onduleur** (onduleurs hybrides, une PowerStream sur sa station) ou sur la maison.
+- **Pylône électrique** devant le compteur, en option.
 - **La maison est calculée** si vous n'avez pas de capteur de consommation (solaire + réseau + batterie).
 - La vitesse des flux suit la puissance ; les branches sans puissance s'estompent.
 - Dessins repris de [HA Appliance Card](https://github.com/ADNPolymerase/ha-appliance-card), plus une maison, un onduleur mural et les panneaux.
-- 6 langues (EN, FR, DE, ES, IT, NL), éditeur visuel, thèmes clair et sombre.
+- 6 langues (EN, FR, DE, ES, IT, NL), éditeur visuel compact (on choisit le nombre de strings et de consommateurs), thèmes clair et sombre.
 
 ## Installation
 
@@ -59,7 +62,16 @@ consumers:
     type: ev_charger
   - entity: sensor.heat_pump_power
     type: heat_pump
+  - entity: sensor.ups_power
+    type: ups
+    children:                            # alimentés par l'onduleur
+      - entity: sensor.router_power
+        type: network
+        appliance:                       # options de HA Appliance Card
+          network_layout: router
 ```
+
+![Micro-onduleurs et un onduleur qui alimente deux appareils](https://raw.githubusercontent.com/ADNPolymerase/ha-illustrated-energy-flow-card/main/docs/screenshot-chain.fr.png)
 
 | Option | Défaut | Description |
 |---|---|---|
@@ -67,17 +79,24 @@ consumers:
 | `grid.import_entity` / `grid.export_entity` | | À la place : deux capteurs positifs |
 | `grid.invert` | `false` | Inverser le signe |
 | `grid.meter` | `box` | `box`, `linky` ou `dome` |
+| `grid.pylon` | `false` | Dessiner un pylône électrique devant le compteur |
 | `solar.strings` | | Liste des strings : `name`, `panels` (entités ou `{entity, name}`), `power_entity` |
 | `solar.power_entity` | somme des strings | Puissance solaire totale |
 | `solar.view` | `panel` | `panel`, `string` ou `total` |
+| `solar.microinverters` | `false` | Un micro-onduleur sous chaque panneau, pas d'onduleur central |
+| `solar.optimizers` | `false` | Un optimiseur sous chaque panneau |
 | `inverter.show` | `true` | Dessiner l'onduleur entre les panneaux et la maison |
 | `inverter.power_entity` | total solaire | Sortie de l'onduleur |
 | `battery.power_entity` | | Puissance batterie signée : positive en décharge, négative en charge |
 | `battery.invert` | `false` | Inverser le signe |
 | `battery.soc_entity` | | Niveau de charge (%) |
 | `battery.reserve` | | Réserve affichée sur la jauge de la batterie (%) |
+| `battery.coupling` | `home` | `home`, ou `inverter` pour une batterie côté continu de l'onduleur |
 | `home.power_entity` | calculée | Consommation de la maison |
-| `consumers` | | Liste : `entity`, `type` (`ev_charger`, `heat_pump`, `water_heater`, `generic`), `name` |
+| `consumers` | | Liste : `entity`, `name`, `type`, `appliance`, `children` |
+| `consumers[].type` | `generic` | Tout type de HA Appliance Card (`washer`, `printer_3d`, `fridge`, `network`, `ups`...), ou `ev_charger`, `heat_pump`, `water_heater`, `generic` sans elle |
+| `consumers[].appliance` | | Options supplémentaires de HA Appliance Card pour le dessin |
+| `consumers[].children` | | Consommateurs alimentés par celui-ci (un niveau) |
 | `panel_peak` | `450` | Puissance crête d'un panneau (W), pour la lueur et la vitesse du flux |
 | `rated_power` | `6000` | Puissance du flux le plus rapide (W) |
 | `flow_style` | `arrows` | `arrows` ou `dashes` |

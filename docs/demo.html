@@ -41,7 +41,9 @@
       <label>Battery</label>
       <div class="seg" data-k="bat"><button data-v="auto" class="on">Auto</button><button data-v="idle">Idle</button><button data-v="discharge">Discharge</button><button data-v="none">None</button></div>
       <label>Consumers</label>
-      <div class="seg" data-k="cons" data-multi><button data-v="ev" class="on">EV</button><button data-v="hp" class="on">Heat pump</button><button data-v="wh">Water heater</button><button data-v="pl">Plug</button></div>
+      <div class="seg" data-k="cons" data-multi><button data-v="ev">EV</button><button data-v="hp">Heat pump</button><button data-v="wh">Water heater</button><button data-v="pr">3D printer</button><button data-v="wm">Washer</button><button data-v="ups">UPS + box + mini PC</button><button data-v="pl">Plug</button></div>
+      <label>Options</label>
+      <div class="seg" data-k="opt" data-multi><button data-v="pylon">Pylon</button><button data-v="micro">Microinverters</button><button data-v="optim">Optimisers</button><button data-v="dc">Battery on the inverter</button></div>
       <label>Solar view</label>
       <div class="seg" data-k="view"><button data-v="panel" class="on">Panel</button><button data-v="string">String</button><button data-v="total">Total</button></div>
       <label>Meter</label>
@@ -69,11 +71,23 @@ customElements.define("ha-card", class extends HTMLElement {
 </script>
 <script src="../dist/illustrated-energy-flow-card.js"></script>
 <script>
+// HA Appliance Card draws the consumers when it is on the page, as in Home
+// Assistant; ?ac=0 shows the drawings the card falls back on without it. A
+// classic script, so the card finds its drawing files next to itself.
+if (new URLSearchParams(location.search).get("ac") !== "0") {
+  const sc = document.createElement("script");
+  sc.src = "https://cdn.jsdelivr.net/gh/ADNPolymerase/ha-appliance-card@v4.38.0/dist/ha-appliance-card.js";
+  document.head.appendChild(sc);
+}
+</script>
+<script>
 const q = new URLSearchParams(location.search);
-const st = { sun: 80, shade: 70, house: 520, bat: "auto", cons: new Set(["ev", "hp"]), view: "panel", meter: "box", flow: "arrows", lang: "en", theme: "light" };
+const st = { sun: 80, shade: 70, house: 520, bat: "auto", cons: new Set(["ev", "hp"]), opt: new Set(), view: "panel", meter: "box", flow: "arrows", lang: "en", theme: "light" };
 for (const k of ["bat", "view", "meter", "flow", "lang", "theme"]) if (q.get(k)) st[k] = q.get(k);
-if (q.get("cons")) st.cons = new Set(q.get("cons").split(",").filter(Boolean));
+if (q.get("cons") !== null) st.cons = new Set(q.get("cons").split(",").filter(Boolean));
+if (q.get("opt")) st.opt = new Set(q.get("opt").split(",").filter(Boolean));
 if (q.get("only") === "card") document.body.classList.add("only");
+if (q.get("w")) document.getElementById("box").style.width = `${+q.get("w")}px`;
 const STR = [{ name: "South", n: 6, eff: 1 }, { name: "West", n: 4, eff: 0.72 }];
 const NAMES = { fr: ["Sud", "Ouest"], de: ["Süd", "West"], es: ["Sur", "Oeste"], it: ["Sud", "Ovest"], nl: ["Zuid", "West"] };
 
@@ -89,7 +103,8 @@ function hass() {
       put(`sensor.panel_${gi + 1}_${i + 1}_power`, w); pv += w;
     }
   });
-  const cons = { ev: 3680, hp: 940, wh: 1800, pl: 85 };
+  const cons = { ev: 3680, hp: 940, wh: 1800, pl: 85, pr: 160, wm: 1900, ups: 64 };
+  put("sensor.box_power", 14); put("sensor.minipc_power", 38);
   let load = st.house;
   for (const k of Object.keys(cons)) { put(`sensor.${k}_power`, st.cons.has(k) ? cons[k] : 0); if (st.cons.has(k)) load += cons[k]; }
   let bat = 0;
@@ -97,7 +112,7 @@ function hass() {
   if (st.bat === "discharge") bat = 2500;
   put("sensor.battery_power", bat); put("sensor.battery_level", 64, "%");
   put("sensor.grid_power", load - pv - (st.bat === "none" ? 0 : bat));
-  return { states: s, language: st.lang, locale: { language: st.lang } };
+  return { states: s, language: st.lang, locale: { language: st.lang }, entities: {}, devices: {}, callService: () => {} };
 }
 
 function config() {
@@ -106,12 +121,16 @@ function config() {
     type: "custom:illustrated-energy-flow-card",
     title: { en: "Energy", fr: "Énergie", de: "Energie", es: "Energía", it: "Energia", nl: "Energie" }[st.lang],
     flow_style: st.flow,
-    grid: { power_entity: "sensor.grid_power", meter: st.meter },
-    solar: { view: st.view, strings: STR.map((g, gi) => ({ name: names[gi], panels: Array.from({ length: g.n }, (_, i) => `sensor.panel_${gi + 1}_${i + 1}_power`) })) },
+    grid: { power_entity: "sensor.grid_power", meter: st.meter, ...(st.opt.has("pylon") ? { pylon: true } : {}) },
+    solar: { view: st.view, ...(st.opt.has("micro") ? { microinverters: true } : st.opt.has("optim") ? { optimizers: true } : {}), strings: STR.map((g, gi) => ({ name: names[gi], panels: Array.from({ length: g.n }, (_, i) => `sensor.panel_${gi + 1}_${i + 1}_power`) })) },
     consumers: [],
   };
-  if (st.bat !== "none") c.battery = { power_entity: "sensor.battery_power", soc_entity: "sensor.battery_level", reserve: 10 };
-  for (const [k, type] of [["ev", "ev_charger"], ["hp", "heat_pump"], ["wh", "water_heater"], ["pl", "generic"]]) if (st.cons.has(k)) c.consumers.push({ entity: `sensor.${k}_power`, type });
+  if (st.bat !== "none") c.battery = { power_entity: "sensor.battery_power", soc_entity: "sensor.battery_level", reserve: 10, ...(st.opt.has("dc") ? { coupling: "inverter" } : {}) };
+  for (const [k, type] of [["ev", "ev_charger"], ["hp", "heat_pump"], ["wh", "water_heater"], ["pr", "printer_3d"], ["wm", "washer"], ["pl", "generic"]]) if (st.cons.has(k)) c.consumers.push({ entity: `sensor.${k}_power`, type });
+  if (st.cons.has("ups")) c.consumers.push({ entity: "sensor.ups_power", type: "ups", children: [
+    { entity: "sensor.box_power", name: "Box", type: "network", appliance: { network_layout: "router" } },
+    { entity: "sensor.minipc_power", name: "Mini PC", type: "network", appliance: { network_layout: "mini_pc" } },
+  ] });
   return c;
 }
 

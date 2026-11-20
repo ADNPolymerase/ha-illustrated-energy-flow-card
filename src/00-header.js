@@ -3,7 +3,7 @@
 // panel, string by string or as a total.
 // https://github.com/ADNPolymerase/ha-illustrated-energy-flow-card
 
-const IE_VERSION = "0.1.0";
+const IE_VERSION = "0.2.0";
 const IE_TAG = "illustrated-energy-flow-card";
 const IE_EDITOR_TAG = "illustrated-energy-flow-card-editor";
 
@@ -31,8 +31,12 @@ const IE_DEFAULTS = {
 };
 
 const IE_LANGS = ["en", "fr", "de", "es", "it", "nl"];
-const IE_CONSUMER_TYPES = ["generic", "ev_charger", "heat_pump", "water_heater"];
+// The consumer drawings offered in the editor. Any HA Appliance Card type
+// works when that card is installed (it draws them); without it, the first
+// four are drawn here and every other one as a smart plug.
+const IE_BUILTIN_TYPES = ["generic", "ev_charger", "heat_pump", "water_heater"];
+const IE_CONSUMER_TYPES = [...IE_BUILTIN_TYPES, "washer", "dryer", "dishwasher", "fridge", "oven", "cooktop", "microwave", "kettle", "coffee", "printer_3d", "screen", "network", "ups", "air_conditioner", "space_heater", "dehumidifier", "pool_pump", "spa", "robot", "lamp"];
 const IE_METERS = ["box", "linky", "dome"];
 const IE_SOLAR_VIEWS = ["panel", "string", "total"];
-const IE_MAX_STRINGS = 4;
-const IE_MAX_CONSUMERS = 6;
+const IE_MAX_STRINGS = 6;
+const IE_MAX_CONSUMERS = 12;

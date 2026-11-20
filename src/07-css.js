@@ -26,5 +26,9 @@ const IE_CSS = `
   svg.ie-e { position: absolute; left: 0; top: 0; width: 96px; height: 108px; overflow: visible; }
   .ie-plug-ring { stroke: #b8bfc6; }
   .ie-plug.on .ie-plug-ring { stroke: #42a5f5; filter: drop-shadow(0 0 2px #42a5f5); }
+  .node .ie-ac { position: relative; width: 130px; height: 108px; margin: 0 auto; }
+  /* HA Appliance Card draws its picture 16 px down and 17 px in: lifted so it
+     sits where the other drawings sit. */
+  .node .ie-ac > ha-appliance-card { position: absolute; left: 0; top: -16px; width: 130px; }
   @media (prefers-reduced-motion: reduce) { .stage * { animation: none !important; } }
 `;

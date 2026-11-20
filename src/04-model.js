@@ -26,7 +26,7 @@ function ieModel(hass, cfg) {
   if (pv !== null && pv < 0) pv = 0;
 
   const inv = c.inverter || {};
-  const showInverter = hasSolar && inv.show !== false;
+  const showInverter = hasSolar && inv.show !== false && !solarCfg.microinverters;
   let invOut = inv.power_entity ? ieWatts(hass, inv.power_entity) : pv;
   if (invOut !== null && invOut < 0) invOut = 0;
 
@@ -44,29 +44,37 @@ function ieModel(hass, cfg) {
 
   const b = c.battery || {};
   const hasBattery = !!(b.power_entity || b.soc_entity);
+  // A battery on the inverter's DC side (hybrid inverters, a PowerStream on
+  // its station) charges and discharges through it, not through the home.
+  const batteryOnInverter = hasBattery && b.coupling === "inverter" && showInverter;
   let bat = b.power_entity ? ieWatts(hass, b.power_entity) : null;
   if (bat !== null && b.invert) bat = -bat;
   const soc = b.soc_entity ? ieNum(hass, b.soc_entity) : null;
 
-  const consumers = (Array.isArray(c.consumers) ? c.consumers : []).filter((x) => ieEntityOf(x)).map((x) => {
+  // A consumer may feed others (a UPS feeding the router and a mini PC): its
+  // children hang from it, one level deep.
+  const consumerOf = (x, depth) => {
     const entity = ieEntityOf(x);
-    const type = x && IE_CONSUMER_TYPES.includes(x.type) ? x.type : "generic";
-    return { entity, name: ieNameOf(x), type, w: ieWatts(hass, entity) };
-  });
+    const type = x && typeof x.type === "string" && /^[a-z0-9_]+$/.test(x.type) ? x.type : "generic";
+    const kids = depth === 0 && x && Array.isArray(x.children) ? x.children.filter((k) => ieEntityOf(k)).map((k) => consumerOf(k, 1)) : [];
+    return { entity, name: ieNameOf(x), type, w: ieWatts(hass, entity), appliance: x && typeof x.appliance === "object" ? x.appliance : null, children: kids };
+  };
+  const consumers = (Array.isArray(c.consumers) ? c.consumers : []).filter((x) => ieEntityOf(x)).map((x) => consumerOf(x, 0));
 
   // The home: its own sensor when given, otherwise what comes in.
   const h = c.home || {};
   let home = null, homeComputed = false;
   if (h.power_entity) home = ieWatts(hass, h.power_entity);
   else {
-    const parts = [hasSolar ? invOut : null, grid, bat];
+    const viaHome = batteryOnInverter ? null : bat;
+    const parts = [hasSolar ? invOut : null, grid, viaHome];
     if (parts.some((v) => v !== null)) {
-      home = Math.max(0, (invOut || 0) + (grid || 0) + (bat || 0));
+      home = Math.max(0, (invOut || 0) + (grid || 0) + (viaHome || 0));
       homeComputed = true;
     }
   }
 
-  return { strings, hasSolar, pv, showInverter, invOut, hasGrid, grid, hasBattery, bat, soc, consumers, home, homeComputed };
+  return { strings, hasSolar, pv, showInverter, invOut, hasGrid, grid, hasBattery, batteryOnInverter, bat, soc, consumers, home, homeComputed, micro: !!solarCfg.microinverters, optimizers: !solarCfg.microinverters && !!solarCfg.optimizers };
 }
 
 // Every entity the card reads: the card only redraws when one of them moves.
@@ -86,6 +94,9 @@ function ieWatched(cfg) {
   const b = c.battery || {};
   add(b.power_entity); add(b.soc_entity);
   add((c.home || {}).power_entity);
-  for (const x of c.consumers || []) add(ieEntityOf(x));
+  for (const x of c.consumers || []) {
+    add(ieEntityOf(x));
+    for (const k of (x && x.children) || []) add(ieEntityOf(k));
+  }
   return out;
 }

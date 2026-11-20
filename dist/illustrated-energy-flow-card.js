@@ -6,7 +6,7 @@
 // panel, string by string or as a total.
 // https://github.com/ADNPolymerase/ha-illustrated-energy-flow-card
 
-const IE_VERSION = "0.1.0";
+const IE_VERSION = "0.2.0";
 const IE_TAG = "illustrated-energy-flow-card";
 const IE_EDITOR_TAG = "illustrated-energy-flow-card-editor";
 
@@ -34,11 +34,15 @@ const IE_DEFAULTS = {
 };
 
 const IE_LANGS = ["en", "fr", "de", "es", "it", "nl"];
-const IE_CONSUMER_TYPES = ["generic", "ev_charger", "heat_pump", "water_heater"];
+// The consumer drawings offered in the editor. Any HA Appliance Card type
+// works when that card is installed (it draws them); without it, the first
+// four are drawn here and every other one as a smart plug.
+const IE_BUILTIN_TYPES = ["generic", "ev_charger", "heat_pump", "water_heater"];
+const IE_CONSUMER_TYPES = [...IE_BUILTIN_TYPES, "washer", "dryer", "dishwasher", "fridge", "oven", "cooktop", "microwave", "kettle", "coffee", "printer_3d", "screen", "network", "ups", "air_conditioner", "space_heater", "dehumidifier", "pool_pump", "spa", "robot", "lamp"];
 const IE_METERS = ["box", "linky", "dome"];
 const IE_SOLAR_VIEWS = ["panel", "string", "total"];
-const IE_MAX_STRINGS = 4;
-const IE_MAX_CONSUMERS = 6;
+const IE_MAX_STRINGS = 6;
+const IE_MAX_CONSUMERS = 12;
 
 // ---- src/01-i18n.js
 // Every text the card and its editor show, in the six languages. Missing keys
@@ -67,6 +71,8 @@ const IE_I18N = {
     e_battery_soc: "State of charge (%)", e_battery_reserve: "Reserve (%)",
     e_home: "Home", e_home_power: "Home power (optional, computed otherwise)",
     e_consumer: "Consumer {n}", e_entity: "Power sensor", e_type: "Drawing",
+    washer: "Washing machine", dryer: "Dryer", dishwasher: "Dishwasher", fridge: "Fridge", oven: "Oven", cooktop: "Cooktop", microwave: "Microwave", kettle: "Kettle", coffee: "Coffee machine", printer_3d: "3D printer", screen: "Screen", network: "Network", ups: "UPS", air_conditioner: "Air conditioner", space_heater: "Heater", dehumidifier: "Dehumidifier", pool_pump: "Pool pump", spa: "Spa", robot: "Robot", lamp: "Lamp", e_strings_count: "Number of strings", e_consumers: "Consumers", e_consumers_count: "Number of consumers", e_fed_by: "Fed by", e_none: "The home", e_pylon: "Draw the grid pylon", e_coupling: "Battery connected to", e_coupling_home: "The home (AC)", e_coupling_inverter: "The inverter (DC, hybrid)", e_appliance: "HA Appliance Card options (YAML)",
+    e_panel_device: "Electronics under each panel", e_pd_none: "None", e_pd_micro: "Microinverters (no central inverter)", e_pd_optim: "Optimisers (with the inverter)",
     auto: "Automatic",
   },
   fr: {
@@ -91,6 +97,8 @@ const IE_I18N = {
     e_battery_soc: "Niveau de charge (%)", e_battery_reserve: "Réserve (%)",
     e_home: "Maison", e_home_power: "Puissance de la maison (facultatif, calculée sinon)",
     e_consumer: "Consommateur {n}", e_entity: "Capteur de puissance", e_type: "Dessin",
+    washer: "Lave-linge", dryer: "Sèche-linge", dishwasher: "Lave-vaisselle", fridge: "Réfrigérateur", oven: "Four", cooktop: "Plaque de cuisson", microwave: "Micro-ondes", kettle: "Bouilloire", coffee: "Machine à café", printer_3d: "Imprimante 3D", screen: "Écran", network: "Réseau informatique", ups: "Onduleur de secours", air_conditioner: "Climatiseur", space_heater: "Radiateur", dehumidifier: "Déshumidificateur", pool_pump: "Pompe de piscine", spa: "Spa", robot: "Robot", lamp: "Lampe", e_strings_count: "Nombre de strings", e_consumers: "Consommateurs", e_consumers_count: "Nombre de consommateurs", e_fed_by: "Alimenté par", e_none: "La maison", e_pylon: "Dessiner le pylône du réseau", e_coupling: "Batterie reliée à", e_coupling_home: "La maison (AC)", e_coupling_inverter: "L'onduleur (DC, hybride)", e_appliance: "Options HA Appliance Card (YAML)",
+    e_panel_device: "Électronique sous chaque panneau", e_pd_none: "Aucune", e_pd_micro: "Micro-onduleurs (pas d'onduleur central)", e_pd_optim: "Optimiseurs (avec l'onduleur)",
     auto: "Automatique",
   },
   de: {
@@ -115,6 +123,8 @@ const IE_I18N = {
     e_battery_soc: "Ladezustand (%)", e_battery_reserve: "Reserve (%)",
     e_home: "Haus", e_home_power: "Hausverbrauch (optional, sonst berechnet)",
     e_consumer: "Verbraucher {n}", e_entity: "Leistungssensor", e_type: "Zeichnung",
+    washer: "Waschmaschine", dryer: "Trockner", dishwasher: "Geschirrspüler", fridge: "Kühlschrank", oven: "Backofen", cooktop: "Kochfeld", microwave: "Mikrowelle", kettle: "Wasserkocher", coffee: "Kaffeemaschine", printer_3d: "3D-Drucker", screen: "Bildschirm", network: "Netzwerk", ups: "USV", air_conditioner: "Klimaanlage", space_heater: "Heizlüfter", dehumidifier: "Luftentfeuchter", pool_pump: "Poolpumpe", spa: "Whirlpool", robot: "Roboter", lamp: "Lampe", e_strings_count: "Anzahl der Strings", e_consumers: "Verbraucher", e_consumers_count: "Anzahl der Verbraucher", e_fed_by: "Versorgt von", e_none: "Dem Haus", e_pylon: "Strommast zeichnen", e_coupling: "Batterie verbunden mit", e_coupling_home: "Dem Haus (AC)", e_coupling_inverter: "Dem Wechselrichter (DC, Hybrid)", e_appliance: "Optionen der HA Appliance Card (YAML)",
+    e_panel_device: "Elektronik unter jedem Modul", e_pd_none: "Keine", e_pd_micro: "Mikrowechselrichter (ohne zentralen Wechselrichter)", e_pd_optim: "Optimierer (mit Wechselrichter)",
     auto: "Automatisch",
   },
   es: {
@@ -139,6 +149,8 @@ const IE_I18N = {
     e_battery_soc: "Nivel de carga (%)", e_battery_reserve: "Reserva (%)",
     e_home: "Casa", e_home_power: "Potencia de la casa (opcional, calculada si no)",
     e_consumer: "Consumidor {n}", e_entity: "Sensor de potencia", e_type: "Dibujo",
+    washer: "Lavadora", dryer: "Secadora", dishwasher: "Lavavajillas", fridge: "Frigorífico", oven: "Horno", cooktop: "Placa de cocina", microwave: "Microondas", kettle: "Hervidor", coffee: "Cafetera", printer_3d: "Impresora 3D", screen: "Pantalla", network: "Red informática", ups: "SAI", air_conditioner: "Aire acondicionado", space_heater: "Calefactor", dehumidifier: "Deshumidificador", pool_pump: "Bomba de piscina", spa: "Spa", robot: "Robot", lamp: "Lámpara", e_strings_count: "Número de strings", e_consumers: "Consumidores", e_consumers_count: "Número de consumidores", e_fed_by: "Alimentado por", e_none: "La casa", e_pylon: "Dibujar la torre eléctrica", e_coupling: "Batería conectada a", e_coupling_home: "La casa (CA)", e_coupling_inverter: "El inversor (CC, híbrido)", e_appliance: "Opciones de HA Appliance Card (YAML)",
+    e_panel_device: "Electrónica bajo cada panel", e_pd_none: "Ninguna", e_pd_micro: "Microinversores (sin inversor central)", e_pd_optim: "Optimizadores (con el inversor)",
     auto: "Automático",
   },
   it: {
@@ -163,6 +175,8 @@ const IE_I18N = {
     e_battery_soc: "Stato di carica (%)", e_battery_reserve: "Riserva (%)",
     e_home: "Casa", e_home_power: "Potenza della casa (facoltativa, altrimenti calcolata)",
     e_consumer: "Utenza {n}", e_entity: "Sensore di potenza", e_type: "Disegno",
+    washer: "Lavatrice", dryer: "Asciugatrice", dishwasher: "Lavastoviglie", fridge: "Frigorifero", oven: "Forno", cooktop: "Piano cottura", microwave: "Microonde", kettle: "Bollitore", coffee: "Macchina da caffè", printer_3d: "Stampante 3D", screen: "Schermo", network: "Rete informatica", ups: "UPS", air_conditioner: "Condizionatore", space_heater: "Stufetta", dehumidifier: "Deumidificatore", pool_pump: "Pompa della piscina", spa: "Spa", robot: "Robot", lamp: "Lampada", e_strings_count: "Numero di stringhe", e_consumers: "Utenze", e_consumers_count: "Numero di utenze", e_fed_by: "Alimentato da", e_none: "La casa", e_pylon: "Disegnare il traliccio", e_coupling: "Batteria collegata a", e_coupling_home: "La casa (CA)", e_coupling_inverter: "L'inverter (CC, ibrido)", e_appliance: "Opzioni di HA Appliance Card (YAML)",
+    e_panel_device: "Elettronica sotto ogni pannello", e_pd_none: "Nessuna", e_pd_micro: "Microinverter (senza inverter centrale)", e_pd_optim: "Ottimizzatori (con l'inverter)",
     auto: "Automatico",
   },
   nl: {
@@ -187,6 +201,8 @@ const IE_I18N = {
     e_battery_soc: "Laadtoestand (%)", e_battery_reserve: "Reserve (%)",
     e_home: "Huis", e_home_power: "Huisverbruik (optioneel, anders berekend)",
     e_consumer: "Verbruiker {n}", e_entity: "Vermogenssensor", e_type: "Tekening",
+    washer: "Wasmachine", dryer: "Droger", dishwasher: "Vaatwasser", fridge: "Koelkast", oven: "Oven", cooktop: "Kookplaat", microwave: "Magnetron", kettle: "Waterkoker", coffee: "Koffiezetapparaat", printer_3d: "3D-printer", screen: "Scherm", network: "Netwerk", ups: "UPS", air_conditioner: "Airco", space_heater: "Kachel", dehumidifier: "Ontvochtiger", pool_pump: "Zwembadpomp", spa: "Spa", robot: "Robot", lamp: "Lamp", e_strings_count: "Aantal strings", e_consumers: "Verbruikers", e_consumers_count: "Aantal verbruikers", e_fed_by: "Gevoed door", e_none: "Het huis", e_pylon: "Hoogspanningsmast tekenen", e_coupling: "Batterij verbonden met", e_coupling_home: "Het huis (AC)", e_coupling_inverter: "De omvormer (DC, hybride)", e_appliance: "Opties van HA Appliance Card (YAML)",
+    e_panel_device: "Elektronica onder elk paneel", e_pd_none: "Geen", e_pd_micro: "Micro-omvormers (geen centrale omvormer)", e_pd_optim: "Optimizers (met de omvormer)",
     auto: "Automatisch",
   },
 };
@@ -368,7 +384,7 @@ function ieModel(hass, cfg) {
   if (pv !== null && pv < 0) pv = 0;
 
   const inv = c.inverter || {};
-  const showInverter = hasSolar && inv.show !== false;
+  const showInverter = hasSolar && inv.show !== false && !solarCfg.microinverters;
   let invOut = inv.power_entity ? ieWatts(hass, inv.power_entity) : pv;
   if (invOut !== null && invOut < 0) invOut = 0;
 
@@ -386,29 +402,37 @@ function ieModel(hass, cfg) {
 
   const b = c.battery || {};
   const hasBattery = !!(b.power_entity || b.soc_entity);
+  // A battery on the inverter's DC side (hybrid inverters, a PowerStream on
+  // its station) charges and discharges through it, not through the home.
+  const batteryOnInverter = hasBattery && b.coupling === "inverter" && showInverter;
   let bat = b.power_entity ? ieWatts(hass, b.power_entity) : null;
   if (bat !== null && b.invert) bat = -bat;
   const soc = b.soc_entity ? ieNum(hass, b.soc_entity) : null;
 
-  const consumers = (Array.isArray(c.consumers) ? c.consumers : []).filter((x) => ieEntityOf(x)).map((x) => {
+  // A consumer may feed others (a UPS feeding the router and a mini PC): its
+  // children hang from it, one level deep.
+  const consumerOf = (x, depth) => {
     const entity = ieEntityOf(x);
-    const type = x && IE_CONSUMER_TYPES.includes(x.type) ? x.type : "generic";
-    return { entity, name: ieNameOf(x), type, w: ieWatts(hass, entity) };
-  });
+    const type = x && typeof x.type === "string" && /^[a-z0-9_]+$/.test(x.type) ? x.type : "generic";
+    const kids = depth === 0 && x && Array.isArray(x.children) ? x.children.filter((k) => ieEntityOf(k)).map((k) => consumerOf(k, 1)) : [];
+    return { entity, name: ieNameOf(x), type, w: ieWatts(hass, entity), appliance: x && typeof x.appliance === "object" ? x.appliance : null, children: kids };
+  };
+  const consumers = (Array.isArray(c.consumers) ? c.consumers : []).filter((x) => ieEntityOf(x)).map((x) => consumerOf(x, 0));
 
   // The home: its own sensor when given, otherwise what comes in.
   const h = c.home || {};
   let home = null, homeComputed = false;
   if (h.power_entity) home = ieWatts(hass, h.power_entity);
   else {
-    const parts = [hasSolar ? invOut : null, grid, bat];
+    const viaHome = batteryOnInverter ? null : bat;
+    const parts = [hasSolar ? invOut : null, grid, viaHome];
     if (parts.some((v) => v !== null)) {
-      home = Math.max(0, (invOut || 0) + (grid || 0) + (bat || 0));
+      home = Math.max(0, (invOut || 0) + (grid || 0) + (viaHome || 0));
       homeComputed = true;
     }
   }
 
-  return { strings, hasSolar, pv, showInverter, invOut, hasGrid, grid, hasBattery, bat, soc, consumers, home, homeComputed };
+  return { strings, hasSolar, pv, showInverter, invOut, hasGrid, grid, hasBattery, batteryOnInverter, bat, soc, consumers, home, homeComputed, micro: !!solarCfg.microinverters, optimizers: !solarCfg.microinverters && !!solarCfg.optimizers };
 }
 
 // Every entity the card reads: the card only redraws when one of them moves.
@@ -428,7 +452,10 @@ function ieWatched(cfg) {
   const b = c.battery || {};
   add(b.power_entity); add(b.soc_entity);
   add((c.home || {}).power_entity);
-  for (const x of c.consumers || []) add(ieEntityOf(x));
+  for (const x of c.consumers || []) {
+    add(ieEntityOf(x));
+    for (const k of (x && x.children) || []) add(ieEntityOf(k));
+  }
   return out;
 }
 
@@ -533,6 +560,47 @@ function iePlugHtml(on) {
 <path d="M44.8 52.6 A4.6 4.6 0 1 0 51.2 52.6" fill="none" stroke="#9aa3ab" stroke-width="1.4" stroke-linecap="round"/>
 <path d="M48 74 C48 86 60 88 60 98" fill="none" stroke="#3a4148" stroke-width="2.4" stroke-linecap="round"/>
 </svg></div>`;
+}
+
+// A lattice transmission pylon: two legs tapering up, braced in X, two cross
+// arms with their hanging insulators and the lines running off to the left,
+// a few trees at its foot. Where the grid comes from.
+function iePylonHtml(on) {
+  // The legs run from (28, 98) and (68, 98) up to (46, 14) and (50, 14).
+  const lx = (y) => 28 + (98 - y) * (18 / 84), rx = (y) => 68 - (98 - y) * (18 / 84);
+  const ys = [98, 82, 66, 52, 40];
+  let brace = "";
+  for (let i = 0; i < ys.length - 1; i++) {
+    const a = ys[i], b = ys[i + 1];
+    brace += `M${f1(lx(a))} ${a} L${f1(rx(b))} ${b} M${f1(rx(a))} ${a} L${f1(lx(b))} ${b} M${f1(lx(b))} ${b} H${f1(rx(b))} `;
+  }
+  const ins = (x, y) => `<path d="M${x} ${y} V${y + 6}" stroke="#8a949c" stroke-width="1.2"/><path d="M${x - 1.6} ${y + 1.5} H${x + 1.6} M${x - 1.6} ${y + 3} H${x + 1.6} M${x - 1.6} ${y + 4.5} H${x + 1.6}" stroke="#c7cfd5" stroke-width=".9"/>`;
+  const tree = (x, s) => `<path d="M${x} ${98} V${98 - 6 * s}" stroke="#6d4c41" stroke-width="${1.2 * s}"/><path d="M${x} ${98 - 22 * s} L${x - 7 * s} ${98 - 6 * s} H${x + 7 * s} Z" fill="#4f8a5b"/><path d="M${x} ${98 - 26 * s} L${x - 5 * s} ${98 - 13 * s} H${x + 5 * s} Z" fill="#5e9e69"/>`;
+  return `<div class="machine ie-pylon${on ? " on" : ""}"><svg class="ie-e" viewBox="0 0 96 108">
+<ellipse cx="48" cy="99" rx="34" ry="2.6" fill="#000" opacity=".14"/>
+<path d="M28 98 L46 14 M68 98 L50 14 M46 14 H50" stroke="#7d868e" stroke-width="1.8" fill="none" stroke-linejoin="round"/>
+<path d="${brace.trim()}" stroke="#9aa3ab" stroke-width=".8" fill="none"/>
+<path d="M30 40 H66 M36 26 H60" stroke="#7d868e" stroke-width="1.6"/>
+${ins(32, 40)}${ins(64, 40)}${ins(38, 26)}${ins(58, 26)}
+<path class="ie-wire-l" d="M-14 52 Q12 42 32 46 M-14 58 Q30 50 64 46 M-14 38 Q16 30 38 32" stroke="#56606a" stroke-width=".7" fill="none"/>
+<path d="M48 8 V14" stroke="#7d868e" stroke-width="1.2"/><circle cx="48" cy="8" r="1.2" fill="#e53935"/>
+${tree(14, 0.9)}${tree(22, 0.65)}${tree(82, 0.8)}
+</svg></div>`;
+}
+
+// A microinverter, under its panel: a small dark box with cooling ribs, its
+// status LED and the AC cable leaving it. One per panel, as Enphase, Hoymiles
+// or APsystems fit them. An optimiser (Tigo, SolarEdge) is the same small box,
+// narrower and without a LED, the central inverter doing the rest.
+function ieMicro(cx, y, on, animate, optimizer) {
+  if (optimizer) {
+    const w = 14, h = 9, x = cx - w / 2;
+    return `<g class="ie-optim"><rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="1.6" fill="#3a4148" stroke="#1b2025" stroke-width=".6"/><path d="M${f1(x + 3)} ${f1(y + 4.5)} H${f1(x + w - 3)}" stroke="#596370" stroke-width=".8"/></g>`;
+  }
+  const w = 18, h = 10, x = cx - w / 2;
+  return `<g class="ie-micro"><rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="2" fill="#2e353c" stroke="#1b2025" stroke-width=".6"/>
+<path d="M${f1(x + 3)} ${f1(y + 3)} H${f1(x + w - 6)} M${f1(x + 3)} ${f1(y + 5)} H${f1(x + w - 6)} M${f1(x + 3)} ${f1(y + 7)} H${f1(x + w - 6)}" stroke="#4a535c" stroke-width=".7"/>
+<circle cx="${f1(x + w - 3)}" cy="${f1(y + h / 2)}" r="1.2" fill="${on ? "#43e07a" : "#55606a"}">${on && animate ? `<animate attributeName="opacity" values="1;.4;1" dur="2.2s" repeatCount="indefinite"/>` : ""}</circle></g>`;
 }
 
 // ---- src/06-vendor-appliance.js
@@ -1309,17 +1377,22 @@ const IE_CSS = `
   svg.ie-e { position: absolute; left: 0; top: 0; width: 96px; height: 108px; overflow: visible; }
   .ie-plug-ring { stroke: #b8bfc6; }
   .ie-plug.on .ie-plug-ring { stroke: #42a5f5; filter: drop-shadow(0 0 2px #42a5f5); }
+  .node .ie-ac { position: relative; width: 130px; height: 108px; margin: 0 auto; }
+  /* HA Appliance Card draws its picture 16 px down and 17 px in: lifted so it
+     sits where the other drawings sit. */
+  .node .ie-ac > ha-appliance-card { position: absolute; left: 0; top: -16px; width: 130px; }
   @media (prefers-reduced-motion: reduce) { .stage * { animation: none !important; } }
 `;
 
 // ---- src/08-card.js
-// The card: lays the drawings out on a 560 px wide stage, draws the flows
-// under them, and scales the whole stage to the width it is given.
+// The card: lays the drawings out on a stage 560 px wide (wider with a
+// pylon or consumers feeding others), draws the flows under them, and scales
+// the whole stage to the width it is given.
 
 const IE_W = 560;
-const IE_LEFT_X = 70;
-const IE_RIGHT_X = 490;
-const IE_HOUSE_X = 280;
+const IE_PYLON_W = 110;
+const IE_CHILD_W = 200;
+const IE_STEP = 172;
 
 let IE_DRAW = null;
 function ieDrawings() {
@@ -1333,66 +1406,91 @@ function ieDrawings() {
 // Where everything goes, from what the config holds. Pure, so the tests can
 // check that a node never lands on another.
 function ieLayout(model, cfg) {
-  const solarCfg = (cfg && cfg.solar) || {};
+  const c = cfg || {};
+  const solarCfg = c.solar || {};
   const view = IE_SOLAR_VIEWS.includes(solarCfg.view) ? solarCfg.view : "panel";
+  const pylon = model.hasGrid && !!(c.grid && c.grid.pylon);
+  const chains = model.consumers.some((k) => k.children.length);
+  const ox = pylon ? IE_PYLON_W : 0;
+  const houseX = 280 + ox, leftX = 70 + ox, rightX = 490 + ox, childX = rightX + IE_CHILD_W;
   // A string given only by its power, or a solar total alone, still gets a
   // few panels drawn: they stand for it and carry no value of their own.
   let groups = model.strings.map((s) => ({ ...s, drawn: s.panels.length || 3, decorative: !s.panels.length }));
   if (!groups.length && model.hasSolar) groups = [{ name: "", index: 0, entity: "", panels: [], w: model.pv, drawn: 4, decorative: true }];
 
-  const L = { view, groups: [], panels: [], width: IE_W };
+  const L = { view, groups: [], width: IE_W + ox + (chains ? IE_CHILD_W : 0), micro: !!model.micro, optimizers: !!model.optimizers };
   let solarBottom = 0;
   if (groups.length) {
     const G = groups.length;
     const N = groups.reduce((a, g) => a + g.drawn, 0);
-    const gapP = 6, gapS = G > 1 ? 40 : 0;
-    const pw = Math.max(12, Math.min(34, (500 - gapS * (G - 1) - gapP * (N - G)) / N));
+    const gapP = 6;
+    const pw = Math.max(12, Math.min(34, (500 - (G > 1 ? 40 : 0) * (G - 1) - gapP * (N - G)) / N));
     const ph = pw * 1.5;
-    const total = N * pw + gapP * (N - G) + gapS * (G - 1);
-    let x = (IE_W - total) / 2;
+    // Room for the label of each string ("South · 1.51 kW"), so two narrow
+    // strings never write over each other.
+    const labelW = (g) => ((g.name || "String 0").length + 10) * 6.8;
+    const groupW = (g) => g.drawn * pw + gapP * (g.drawn - 1);
+    const gaps = groups.slice(1).map((g, i) => Math.max(40, (labelW(groups[i]) + labelW(g)) / 2 + 12 - (groupW(groups[i]) + groupW(g)) / 2));
+    const total = N * pw + gapP * (N - G) + gaps.reduce((a, b) => a + b, 0);
+    let x = Math.max(ox + 10, houseX - total / 2);
     const py = 40;
-    L.pw = pw; L.ph = ph; L.py = py; L.bus = py + ph + 16;
-    groups.forEach((g) => {
-      const gw = g.drawn * pw + gapP * (g.drawn - 1);
+    L.pw = pw; L.ph = ph; L.py = py;
+    // Microinverters or optimisers hang under their panels, the bus under them.
+    L.microY = py + ph + 5;
+    L.bus = py + ph + (L.micro || L.optimizers ? 30 : 16);
+    groups.forEach((g, i) => {
+      const gw = groupW(g);
       L.groups.push({ ...g, x, width: gw, cx: x + gw / 2 });
-      x += gw + gapS;
+      x += gw + (gaps[i] || 0);
     });
-    solarBottom = view === "panel" ? L.bus : py + ph;
+    solarBottom = view === "panel" || L.micro || L.optimizers ? L.bus : py + ph;
   }
 
   const showInverter = model.showInverter && L.groups.length > 0;
   let by;
   if (showInverter) {
-    L.inv = { x: IE_HOUSE_X, y: solarBottom + 80 };
+    L.inv = { x: houseX, y: solarBottom + 80 };
     by = L.inv.y + 36 + 46 + 99;
   } else if (L.groups.length) {
     by = solarBottom + 60 + 99;
   } else {
     by = 150;
   }
-  L.house = { x: IE_HOUSE_X, by, top: by - 99, left: IE_HOUSE_X - 52, right: IE_HOUSE_X + 63 };
+  L.house = { x: houseX, by, top: by - 99, left: houseX - 52, right: houseX + 63 };
 
-  // Left: the grid above, the battery below; alone, level with the house.
+  // Left: the grid above, the battery below; alone, level with the house. A
+  // battery on the inverter sits beside it, and the grid then goes lower.
   L.grid = null; L.battery = null;
-  if (model.hasGrid && model.hasBattery) {
-    L.grid = { x: IE_LEFT_X, y: by - 100 };
-    L.battery = { x: IE_LEFT_X, y: by + 110 };
-  } else if (model.hasGrid) L.grid = { x: IE_LEFT_X, y: by - 50 };
-  else if (model.hasBattery) L.battery = { x: IE_LEFT_X, y: by - 50 };
+  const onInv = model.batteryOnInverter && L.inv;
+  if (onInv) {
+    L.battery = { x: leftX, y: L.inv.y };
+    if (model.hasGrid) L.grid = { x: leftX, y: by + 40 };
+  } else if (model.hasGrid && model.hasBattery) {
+    L.grid = { x: leftX, y: by - 100 };
+    L.battery = { x: leftX, y: by + 110 };
+  } else if (model.hasGrid) L.grid = { x: leftX, y: by - 50 };
+  else if (model.hasBattery) L.battery = { x: leftX, y: by - 50 };
+  L.pylon = pylon && L.grid ? { x: 66, y: L.grid.y } : null;
 
   // Right: the consumers in a column centred on the house, kept below the
-  // panels.
-  const n = model.consumers.length;
-  const step = 172;
+  // panels; the ones a consumer feeds stand in a second column beside it.
+  const blocks = model.consumers.map((k) => Math.max(1, k.children.length) * IE_STEP);
+  const totalH = blocks.reduce((a, b) => a + b, 0);
   const minY = (L.groups.length ? solarBottom : 0) + 74;
-  let first = by - 50 - ((n - 1) * step) / 2;
-  if (first < minY) first = minY;
-  L.consumers = model.consumers.map((c, i) => ({ x: IE_RIGHT_X, y: first + i * step }));
+  let cursor = Math.max(minY, by - 50 - (totalH - IE_STEP) / 2);
+  L.consumers = model.consumers.map((k, i) => {
+    const pos = { x: rightX, y: cursor + (blocks[i] - IE_STEP) / 2, children: k.children.map((_, j) => ({ x: childX, y: cursor + j * IE_STEP })) };
+    cursor += blocks[i];
+    return pos;
+  });
 
   const bottoms = [by + 52];
   if (L.grid) bottoms.push(L.grid.y + 54 + 58);
   if (L.battery) bottoms.push(L.battery.y + 54 + 58);
-  for (const c of L.consumers) bottoms.push(c.y + 54 + 58);
+  for (const k of L.consumers) {
+    bottoms.push(k.y + 54 + 58);
+    for (const ch of k.children) bottoms.push(ch.y + 54 + 58);
+  }
   L.height = Math.ceil(Math.max(...bottoms) + 6);
   return L;
 }
@@ -1432,6 +1530,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
   set hass(hass) {
     this._hass = hass;
     if (!this._config) return;
+    if (this._ac) for (const rec of this._ac.values()) rec.el.hass = hass;
     const sig = this._signature();
     if (sig !== this._sig) this._render();
   }
@@ -1479,14 +1578,41 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     this._built = true;
   }
 
+  // The HA Appliance Card elements live across redraws: created once per
+  // consumer, given their config again only when it changes, and moved into
+  // the fresh placeholders.
+  _mountAppliances(list) {
+    this._ac = this._ac || new Map();
+    const keep = new Set();
+    for (const { key, cm } of list) {
+      const holder = this._wrap.querySelector(`[data-ac="${key}"]`);
+      if (!holder) continue;
+      const conf = { type: "custom:ha-appliance-card", appliance_type: cm.type, state_entity: cm.entity, power_entity: cm.entity, show_name: false, show_state: false, transparent: true, hidden_lines: ["power"], ...(cm.appliance || {}) };
+      const sig = JSON.stringify(conf);
+      let rec = this._ac.get(key);
+      if (!rec) {
+        rec = { el: document.createElement("ha-appliance-card"), sig: "" };
+        this._ac.set(key, rec);
+      }
+      if (rec.sig !== sig) {
+        try { rec.el.setConfig(conf); rec.sig = sig; } catch (e) { rec.sig = ""; }
+      }
+      rec.el.hass = this._hass;
+      holder.appendChild(rec.el);
+      keep.add(key);
+    }
+    for (const k of [...this._ac.keys()]) if (!keep.has(k)) this._ac.delete(k);
+  }
+
   // Scale the stage to the width of the card, never past 130 %.
   _fit() {
     if (!this._wrap || !this._stage) return;
-    const w = this._wrap.clientWidth || IE_W;
-    const k = Math.max(0.4, Math.min(1.3, w / IE_W));
+    const sw = this._layoutW || IE_W;
+    const w = this._wrap.clientWidth || sw;
+    const k = Math.max(0.3, Math.min(1.3, w / sw));
     this._k = k;
     this._stage.style.transform = `scale(${k})`;
-    this._stage.style.marginLeft = `${Math.max(0, (w - IE_W * k) / 2)}px`;
+    this._stage.style.marginLeft = `${Math.max(0, (w - sw * k) / 2)}px`;
     this._wrap.style.height = `${Math.ceil(this._layoutH * k) + 12}px`;
   }
 
@@ -1513,9 +1639,10 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     const m = ieModel(hass, c);
     const L = ieLayout(m, c);
     this._layoutH = L.height;
+    this._layoutW = L.width;
     const D = ieDrawings();
     const lbl = (x, y, text, cls = "", anchor = "middle") => `<text class="ie-lbl ${cls}" x="${f1(x)}" y="${f1(y)}" text-anchor="${anchor}">${esc(text)}</text>`;
-    let svg = `<svg class="ie-flows" width="${IE_W}" height="${L.height}" viewBox="0 0 ${IE_W} ${L.height}">${IE_DEFS}`;
+    let svg = `<svg class="ie-flows" width="${L.width}" height="${L.height}" viewBox="0 0 ${L.width} ${L.height}">${IE_DEFS}`;
 
     /* ---- solar: panels, their drops, the strings into the inverter ---- */
     const invTop = L.inv ? L.inv.y - 30 : L.house.top - 4;
@@ -1538,15 +1665,21 @@ class IllustratedEnergyFlowCard extends HTMLElement {
         }
         if (p && p.name) svg += `<title>${esc(p.name)} · ${esc(fmt(p.w))}</title>`;
         svg += `</g>`;
-        if (L.view === "panel" && p) svg += ieFlow(ieLine(px + L.pw / 2, L.py + L.ph + 2, px + L.pw / 2, L.bus), p.w, IE_COLORS.solar, peak, { ...fo, gap: 9 });
+        const pcx = px + L.pw / 2;
+        if (L.micro || L.optimizers) {
+          svg += `<g${p ? hit(p.entity) : ""}>${ieMicro(pcx, L.microY, pwatts !== null && pwatts > 1, animate, L.optimizers)}</g>`;
+          if (L.view === "panel" && p) svg += ieFlow(ieLine(pcx, L.microY + 11, pcx, L.bus), p.w, IE_COLORS.solar, peak, { ...fo, gap: 9 });
+          else svg += `<path class="ie-track" d="M${f1(pcx)} ${f1(L.microY + 11)} V${f1(L.bus)}"/>`;
+        } else if (L.view === "panel" && p) svg += ieFlow(ieLine(pcx, L.py + L.ph + 2, pcx, L.bus), p.w, IE_COLORS.solar, peak, { ...fo, gap: 9 });
       }
-      const fromY = L.view === "panel" && !g.decorative ? L.bus : L.py + L.ph + 3;
-      if (L.view === "panel" && !g.decorative && g.drawn > 1) svg += `<path class="ie-bus" d="M${f1(g.x + L.pw / 2)} ${f1(L.bus)} H${f1(g.x + g.width - L.pw / 2)}"/>`;
+      const onBus = L.micro || L.optimizers || (L.view === "panel" && !g.decorative);
+      const fromY = onBus ? L.bus : L.py + L.ph + 3;
+      if (onBus && g.drawn > 1) svg += `<path class="ie-bus" d="M${f1(g.x + L.pw / 2)} ${f1(L.bus)} H${f1(g.x + g.width - L.pw / 2)}"/>`;
       const mx = L.inv ? (G === 1 ? L.inv.x : L.inv.x - 18 + (36 * gi) / (G - 1)) : L.house.x;
       const spec = ieCubic(g.cx, fromY, g.cx, fromY + 40, mx, invTop - 40, mx, invTop - 4);
       svg += ieFlow(spec, g.w, IE_COLORS.solar, peak * Math.max(1, g.drawn), fo);
     });
-    if (G && L.view === "total") svg += lbl(IE_HOUSE_X, L.py - 10, `${t("solar")} · ${fmt(m.pv)}`);
+    if (G && L.view === "total") svg += lbl(L.house.x, L.py - 10, `${t("solar")} · ${fmt(m.pv)}`);
 
     if (L.inv) {
       const invOn = m.invOut !== null && m.invOut > 1;
@@ -1554,7 +1687,9 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       svg += lbl(L.inv.x + 10, L.inv.y + 36 + 26, fmt(m.invOut), "", "start");
       const invEntity = (c.inverter && c.inverter.power_entity) || (c.solar && c.solar.power_entity) || "";
       svg += `<g${hit(invEntity)}${dimOn && !invOn ? ' class="dim"' : ""}>${ieInverter(L.inv.x, L.inv.y, invOn, animate)}</g>`;
-      svg += lbl(L.inv.x - 42, L.inv.y + 4, t("inverter"), "light", "end");
+      // With the battery beside it, the inverter's name goes to its right.
+      if (L.battery && m.batteryOnInverter) svg += lbl(L.inv.x + 38, L.inv.y + 4, t("inverter"), "light", "start");
+      else svg += lbl(L.inv.x - 42, L.inv.y + 4, t("inverter"), "light", "end");
     }
 
     /* ---- grid, battery, consumers ---- */
@@ -1565,10 +1700,16 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       const color = m.grid !== null && m.grid < 0 ? IE_COLORS.export : IE_COLORS.import;
       svg += ieFlow(spec, m.grid, color, rated, fo);
       if (m.grid !== null && Math.abs(m.grid) >= 1) svg += lbl((a.x + b.x) / 2, (a.y + b.y) / 2 - 8, `${t(m.grid < 0 ? "export" : "import")} ${fmt(m.grid)}`);
+      if (L.pylon) {
+        let ps = ieLine(L.pylon.x + 34, L.grid.y + 10, L.grid.x - 40, L.grid.y + 10);
+        if (m.grid !== null && m.grid < 0) ps = ieReverse(ps);
+        svg += ieFlow(ps, m.grid, color, rated, fo);
+      }
     }
     if (L.battery) {
-      const a = { x: L.battery.x + 50, y: L.battery.y }, b = { x: L.house.left - 2, y: L.house.by - 22 };
-      let spec = ieCubic(b.x, b.y, b.x - 50, b.y, a.x + 70, a.y, a.x, a.y); // house -> battery: charging
+      const a = { x: L.battery.x + 50, y: L.battery.y };
+      const b = m.batteryOnInverter && L.inv ? { x: L.inv.x - 34, y: L.inv.y + 6 } : { x: L.house.left - 2, y: L.house.by - 22 };
+      let spec = ieCubic(b.x, b.y, b.x - 50, b.y, a.x + 70, a.y, a.x, a.y); // house (or inverter) -> battery: charging
       if (m.bat !== null && m.bat > 0) spec = ieReverse(spec);
       svg += ieFlow(spec, m.bat, m.bat !== null && m.bat > 0 ? IE_COLORS.discharge : IE_COLORS.charge, rated, fo);
       if (m.bat !== null && Math.abs(m.bat) >= 1) svg += lbl((a.x + b.x) / 2, (a.y + b.y) / 2 + 16, `${t(m.bat > 0 ? "discharging" : "charging")} ${fmt(m.bat)}`);
@@ -1577,7 +1718,14 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       const cm = m.consumers[i];
       const n = L.consumers.length;
       const a = { x: L.house.right + 3, y: L.house.by - 30 + (n > 1 ? (i - (n - 1) / 2) * Math.min(9, 30 / (n - 1)) : 0) }, b = { x: p.x - 54, y: p.y };
-      svg += ieFlow(ieCubic(a.x, a.y, a.x + 46, a.y, b.x - 46, b.y, b.x, b.y), cm.w, IE_COLORS.load, rated, fo);
+      const idle = !(cm.w !== null && cm.w > 5);
+      svg += `<g${dimOn && idle ? ' class="dim"' : ""}>${ieFlow(ieCubic(a.x, a.y, a.x + 46, a.y, b.x - 46, b.y, b.x, b.y), cm.w, IE_COLORS.load, rated, fo)}</g>`;
+      p.children.forEach((q, j) => {
+        const ch = cm.children[j];
+        const ca = { x: p.x + 52, y: p.y }, cb = { x: q.x - 54, y: q.y };
+        const cidle = !(ch.w !== null && ch.w > 5);
+        svg += `<g${dimOn && cidle ? ' class="dim"' : ""}>${ieFlow(ieCubic(ca.x, ca.y, ca.x + 50, ca.y, cb.x - 50, cb.y, cb.x, cb.y), ch.w, IE_COLORS.load, rated, fo)}</g>`;
+      });
     });
 
     /* ---- the house ---- */
@@ -1591,6 +1739,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     const node = (pos, html, name, value, sub, entity, inactive) =>
       `<div class="node${dimOn && inactive ? " dim" : ""}${entity && c.clickable !== false ? " hit" : ""}"${entity && c.clickable !== false ? ` data-entity="${esc(entity)}"` : ""} style="left:${f1(pos.x - 65)}px;top:${f1(pos.y - 54)}px">${html}<div class="nm">${esc(name)}</div><div class="vl">${esc(value)}</div>${sub ? `<div class="sb">${esc(sub)}</div>` : ""}</div>`;
     let nodes = "";
+    if (L.pylon) nodes += node({ x: L.pylon.x, y: L.pylon.y }, iePylonHtml(m.grid !== null && Math.abs(m.grid) >= 1), "", "", "", "", false);
     if (L.grid) {
       const g = c.grid || {};
       const exp = m.grid !== null && m.grid < -1;
@@ -1610,18 +1759,34 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       const sub = m.soc !== null ? `${Math.round(m.soc)} % · ${state}` : state;
       nodes += node(L.battery, html, b.name || t("battery"), fmt(m.bat), sub, b.power_entity || b.soc_entity, mode === "idle" || mode === "full");
     }
-    L.consumers.forEach((p, i) => {
-      const cm = m.consumers[i];
+    // A consumer is drawn by HA Appliance Card when it is installed, as that
+    // card draws it on its own page; otherwise by the drawings copied here.
+    const acReady = typeof customElements !== "undefined" && !!customElements.get("ha-appliance-card");
+    const wantAc = [];
+    const consumerNode = (pos, cm, key) => {
       const on = cm.w !== null && cm.w > 5;
       let html;
-      if (cm.type === "ev_charger") html = D.ev.draw("", { ev: { mode: on ? "charging" : "connected", plugged: true, flow: 0.5 } }).replace('class="machine', `style="--ie-ev:${on ? "#2196f3" : "#26a69a"}" class="machine`);
+      if (cm.type !== "generic" && acReady) {
+        html = `<div class="ie-ac" data-ac="${esc(key)}"></div>`;
+        wantAc.push({ key, cm });
+      } else if (cm.type === "ev_charger") html = D.ev.draw("", { ev: { mode: on ? "charging" : "connected", plugged: true, flow: 0.5 } }).replace('class="machine', `style="--ie-ev:${on ? "#2196f3" : "#26a69a"}" class="machine`);
       else if (cm.type === "heat_pump") html = D.hp.draw("", { hpMode: on ? "space_heating" : "idle", noTank: true });
       else if (cm.type === "water_heater") html = D.wh.draw(on ? "heating" : "", { tankTemp: on ? 55 : 40 });
       else html = iePlugHtml(on);
-      nodes += node(p, html, cm.name || t(cm.type), fmt(cm.w), cm.w === null ? t("unavailable") : "", cm.entity, !on);
+      return node(pos, html, cm.name || t(cm.type), fmt(cm.w), cm.w === null ? t("unavailable") : "", cm.entity, !on);
+    };
+    L.consumers.forEach((p, i) => {
+      const cm = m.consumers[i];
+      nodes += consumerNode(p, cm, `c${i}`);
+      p.children.forEach((q, j) => { nodes += consumerNode(q, cm.children[j], `c${i}-${j}`); });
     });
+    if (!acReady && m.consumers.some((k) => k.type !== "generic" || k.children.some((x) => x.type !== "generic")) && !this._acWait && typeof customElements !== "undefined" && customElements.whenDefined) {
+      this._acWait = true;
+      customElements.whenDefined("ha-appliance-card").then(() => { this._sig = null; if (this._hass) this._render(); });
+    }
 
-    this._wrap.innerHTML = `<div class="stage" style="width:${IE_W}px;height:${L.height}px">${svg}${nodes}</div>`;
+    this._wrap.innerHTML = `<div class="stage" style="width:${L.width}px;height:${L.height}px">${svg}${nodes}</div>`;
+    this._mountAppliances(wantAc);
     this._stage = this._wrap.querySelector(".stage");
     const flows = this._wrap.querySelector("svg.ie-flows");
     // Rebuilding the SVG restarts its animations: fast-forward to wall-clock
@@ -1632,9 +1797,9 @@ class IllustratedEnergyFlowCard extends HTMLElement {
 }
 
 // ---- src/09-editor.js
-// The visual editor: one ha-form over a flat copy of the config, folded into
-// sections. The flat copy is turned back into the nested config on each
-// change, keeping every key the form does not show.
+// The visual editor: one ha-form over a flat copy of the config, in six
+// sections. The number of strings and of consumers is chosen, and only those
+// are shown, each folded on its own, so the form stays short.
 //
 // Pitfalls met in the sibling cards, handled here:
 //  - CustomEvent.detail is read-only: a new event is built, never mutated;
@@ -1643,9 +1808,29 @@ class IllustratedEnergyFlowCard extends HTMLElement {
 //    does not rebuild the form, and a panel given as { entity, name } keeps
 //    its name when the form only knows its entity.
 
-// The flat field names, and how they map to the nested config.
-function ieToForm(cfg) {
+// The consumers as one flat list: each one that feeds others, then those.
+// `fed` is the 1-based place of the consumer feeding it, 0 for the home.
+function ieFlatConsumers(cfg) {
+  const out = [];
+  for (const x of (cfg && Array.isArray(cfg.consumers) ? cfg.consumers : [])) {
+    const top = out.length + 1;
+    out.push({ item: x, fed: 0 });
+    for (const k of (x && Array.isArray(x.children) ? x.children : [])) out.push({ item: k, fed: top });
+  }
+  return out;
+}
+
+function ieCounts(cfg) {
+  const s = (cfg && cfg.solar) || {};
+  return {
+    strings: Math.min(IE_MAX_STRINGS, Array.isArray(s.strings) ? s.strings.length : 0),
+    consumers: Math.min(IE_MAX_CONSUMERS, ieFlatConsumers(cfg).length),
+  };
+}
+
+function ieToForm(cfg, counts) {
   const c = cfg || {};
+  const n = counts || ieCounts(c);
   const g = c.grid || {}, s = c.solar || {}, inv = c.inverter || {}, b = c.battery || {}, h = c.home || {};
   const d = {
     title: c.title || "", language: c.language || "auto", flow_style: c.flow_style || "arrows",
@@ -1653,12 +1838,14 @@ function ieToForm(cfg) {
     decimals: Number.isFinite(+c.decimals) ? +c.decimals : 0,
     rated_power: c.rated_power || IE_DEFAULTS.rated_power, panel_peak: c.panel_peak || IE_DEFAULTS.panel_peak,
     grid_power: g.power_entity || "", grid_invert: !!g.invert, grid_import: g.import_entity || "",
-    grid_export: g.export_entity || "", grid_meter: g.meter || "box", grid_name: g.name || "",
-    solar_power: s.power_entity || "", solar_view: s.view || "panel",
+    grid_export: g.export_entity || "", grid_meter: g.meter || "box", grid_pylon: !!g.pylon, grid_name: g.name || "",
+    solar_power: s.power_entity || "", solar_view: s.view || "panel", panel_device: s.microinverters ? "micro" : s.optimizers ? "optim" : "none",
     inverter: inv.show !== false, inverter_power: inv.power_entity || "",
     battery_power: b.power_entity || "", battery_invert: !!b.invert, battery_soc: b.soc_entity || "",
+    battery_coupling: b.coupling === "inverter" ? "inverter" : "home",
     battery_reserve: b.reserve === undefined || b.reserve === null ? "" : b.reserve, battery_name: b.name || "",
     home_power: h.power_entity || "", home_name: h.name || "",
+    strings_count: n.strings, consumers_count: n.consumers,
   };
   const strings = Array.isArray(s.strings) ? s.strings : [];
   for (let i = 0; i < IE_MAX_STRINGS; i++) {
@@ -1667,12 +1854,15 @@ function ieToForm(cfg) {
     d[`s${i + 1}_power`] = st.power_entity || "";
     d[`s${i + 1}_panels`] = (Array.isArray(st.panels) ? st.panels : []).map(ieEntityOf).filter(Boolean);
   }
-  const cons = Array.isArray(c.consumers) ? c.consumers : [];
+  const flat = ieFlatConsumers(c);
   for (let i = 0; i < IE_MAX_CONSUMERS; i++) {
-    const x = cons[i] || {};
+    const f = flat[i] || { item: {}, fed: 0 };
+    const x = f.item || {};
     d[`c${i + 1}_entity`] = ieEntityOf(x);
     d[`c${i + 1}_type`] = (x && x.type) || "generic";
     d[`c${i + 1}_name`] = ieNameOf(x);
+    d[`c${i + 1}_fed`] = String(f.fed || 0);
+    d[`c${i + 1}_appliance`] = x && typeof x.appliance === "object" && x.appliance ? x.appliance : {};
   }
   return d;
 }
@@ -1681,7 +1871,7 @@ function ieFromForm(d, prev) {
   const p = prev || {};
   const out = { ...p };
   const set = (obj, key, value) => {
-    if (value === "" || value === null || value === undefined || (Array.isArray(value) && !value.length)) delete obj[key];
+    if (value === "" || value === null || value === undefined || (Array.isArray(value) && !value.length) || (value && typeof value === "object" && !Array.isArray(value) && !Object.keys(value).length)) delete obj[key];
     else obj[key] = value;
   };
   set(out, "title", d.title);
@@ -1695,7 +1885,7 @@ function ieFromForm(d, prev) {
 
   const section = (key, build) => {
     const o = build({ ...(p[key] || {}) });
-    const meaningful = Object.keys(o).some((k) => !["invert", "show", "meter", "view"].includes(k) || (k === "show" && o.show === false));
+    const meaningful = Object.keys(o).some((k) => !["invert", "show", "meter", "view", "pylon", "coupling", "microinverters", "optimizers"].includes(k) || (k === "show" && o.show === false));
     if (meaningful) out[key] = o;
     else delete out[key];
   };
@@ -1704,16 +1894,20 @@ function ieFromForm(d, prev) {
     set(g, "power_entity", d.grid_power); set(g, "import_entity", d.grid_import); set(g, "export_entity", d.grid_export);
     if (d.grid_invert) g.invert = true; else delete g.invert;
     if (d.grid_meter && d.grid_meter !== "box") g.meter = d.grid_meter; else delete g.meter;
+    if (d.grid_pylon) g.pylon = true; else delete g.pylon;
     set(g, "name", d.grid_name);
     return g;
   });
 
+  const nStrings = Math.max(0, Math.min(IE_MAX_STRINGS, Number(d.strings_count) || 0));
   section("solar", (s) => {
     set(s, "power_entity", d.solar_power);
     if (d.solar_view && d.solar_view !== "panel") s.view = d.solar_view; else delete s.view;
+    if (d.panel_device === "micro") s.microinverters = true; else delete s.microinverters;
+    if (d.panel_device === "optim") s.optimizers = true; else delete s.optimizers;
     const old = Array.isArray(s.strings) ? s.strings : [];
     const strings = [];
-    for (let i = 0; i < IE_MAX_STRINGS; i++) {
+    for (let i = 0; i < nStrings; i++) {
       const prevStr = { ...(old[i] || {}) };
       const named = new Map((Array.isArray(prevStr.panels) ? prevStr.panels : []).map((x) => [ieEntityOf(x), x]));
       const panels = (d[`s${i + 1}_panels`] || []).filter(Boolean).map((e) => named.get(e) || e);
@@ -1722,8 +1916,6 @@ function ieFromForm(d, prev) {
       set(prevStr, "panels", panels);
       if (prevStr.name || prevStr.power_entity || prevStr.panels) strings.push(prevStr);
     }
-    // Strings past the ones the form shows stay as they were.
-    for (let i = IE_MAX_STRINGS; i < old.length; i++) strings.push(old[i]);
     set(s, "strings", strings);
     return s;
   });
@@ -1737,6 +1929,7 @@ function ieFromForm(d, prev) {
   section("battery", (b) => {
     set(b, "power_entity", d.battery_power); set(b, "soc_entity", d.battery_soc);
     if (d.battery_invert) b.invert = true; else delete b.invert;
+    if (d.battery_coupling === "inverter") b.coupling = "inverter"; else delete b.coupling;
     set(b, "reserve", d.battery_reserve === "" || d.battery_reserve === null || d.battery_reserve === undefined ? "" : Number(d.battery_reserve));
     set(b, "name", d.battery_name);
     return b;
@@ -1747,19 +1940,29 @@ function ieFromForm(d, prev) {
     return h;
   });
 
-  const oldCons = Array.isArray(p.consumers) ? p.consumers : [];
-  const cons = [];
-  for (let i = 0; i < IE_MAX_CONSUMERS; i++) {
+  // The flat list back to consumers and the ones they feed.
+  const oldFlat = ieFlatConsumers(p);
+  const nCons = Math.max(0, Math.min(IE_MAX_CONSUMERS, Number(d.consumers_count) || 0));
+  const tops = [];
+  const topAt = new Map();
+  for (let i = 0; i < nCons; i++) {
     const entity = d[`c${i + 1}_entity`];
     if (!entity) continue;
-    const prevC = oldCons[i] && typeof oldCons[i] === "object" ? { ...oldCons[i] } : {};
-    prevC.entity = entity;
-    if (d[`c${i + 1}_type`] && d[`c${i + 1}_type`] !== "generic") prevC.type = d[`c${i + 1}_type`]; else delete prevC.type;
-    set(prevC, "name", d[`c${i + 1}_name`]);
-    cons.push(prevC);
+    const old = oldFlat[i] && oldFlat[i].item && typeof oldFlat[i].item === "object" ? { ...oldFlat[i].item } : {};
+    delete old.children;
+    old.entity = entity;
+    if (d[`c${i + 1}_type`] && d[`c${i + 1}_type`] !== "generic") old.type = d[`c${i + 1}_type`]; else delete old.type;
+    set(old, "name", d[`c${i + 1}_name`]);
+    set(old, "appliance", d[`c${i + 1}_appliance`]);
+    const fed = Number(d[`c${i + 1}_fed`]) || 0;
+    const parent = fed && fed - 1 < i ? topAt.get(fed) : null;
+    if (parent) (parent.children = parent.children || []).push(old);
+    else {
+      tops.push(old);
+      topAt.set(i + 1, old);
+    }
   }
-  for (let i = IE_MAX_CONSUMERS; i < oldCons.length; i++) cons.push(oldCons[i]);
-  set(out, "consumers", cons);
+  set(out, "consumers", tops);
   return out;
 }
 
@@ -1778,62 +1981,84 @@ function ieSchema(hass, lang, data) {
   const bool = (name, label) => ({ name, label, selector: { boolean: {} } });
   const num = (name, label, min, max, step) => ({ name, label, selector: { number: { min, max, step, mode: "box" } } });
   const sel = (name, label, options) => ({ name, label, selector: { select: { mode: "dropdown", options } } });
-  const exp = (title, schema, expanded) => ({ type: "expandable", name: "", flatten: true, title, expanded: !!expanded, schema });
+  const exp = (title, schema) => ({ type: "expandable", name: "", flatten: true, title, schema });
+  const grid2 = (schema) => ({ type: "grid", name: "", flatten: true, schema });
+
+  const nS = Math.max(0, Math.min(IE_MAX_STRINGS, Number(data.strings_count) || 0));
+  const nC = Math.max(0, Math.min(IE_MAX_CONSUMERS, Number(data.consumers_count) || 0));
 
   const strings = [];
-  for (let i = 1; i <= IE_MAX_STRINGS; i++) {
-    // A string section shows up once the one before it is used.
-    const used = (n) => data[`s${n}_name`] || data[`s${n}_power`] || (data[`s${n}_panels`] || []).length;
-    if (i > 1 && !used(i - 1) && !used(i)) break;
-    strings.push(exp(t("e_string", { n: i }), [
+  for (let i = 1; i <= nS; i++) {
+    const name = data[`s${i}_name`];
+    strings.push(exp(name ? `${t("e_string", { n: i })} · ${name}` : t("e_string", { n: i }), [
       txt(`s${i}_name`, t("e_name")),
       ent(`s${i}_panels`, power, t("e_panels"), true),
       ent(`s${i}_power`, power, t("e_string_power")),
-    ], i === 1 && !used(1)));
+    ]));
   }
+  // A type typed in YAML that the list lacks is added as it is, so the
+  // choice shows its translated name (a free-text select would show the code).
+  const typeOptions = (cur) => [...IE_CONSUMER_TYPES, ...(cur && !IE_CONSUMER_TYPES.includes(cur) ? [cur] : [])].map((v) => ({ value: v, label: IE_CONSUMER_TYPES.includes(v) ? t(v) : v }));
   const consumers = [];
-  for (let i = 1; i <= IE_MAX_CONSUMERS; i++) {
-    if (i > 1 && !data[`c${i - 1}_entity`] && !data[`c${i}_entity`]) break;
-    consumers.push(exp(t("e_consumer", { n: i }), [
+  for (let i = 1; i <= nC; i++) {
+    // A consumer is fed by the home, or by one of the consumers above it
+    // that is itself fed by the home.
+    const feeds = [{ value: "0", label: t("e_none") }];
+    for (let j = 1; j < i; j++) {
+      if (String(data[`c${j}_fed`] || "0") !== "0") continue;
+      feeds.push({ value: String(j), label: data[`c${j}_name`] || `${t("e_consumer", { n: j })}` });
+    }
+    const name = data[`c${i}_name`] || (data[`c${i}_entity`] ? t(data[`c${i}_type`] || "generic") : "");
+    consumers.push(exp(name ? `${t("e_consumer", { n: i })} · ${name}` : t("e_consumer", { n: i }), [
       ent(`c${i}_entity`, power, t("e_entity")),
-      sel(`c${i}_type`, t("e_type"), IE_CONSUMER_TYPES.map((v) => ({ value: v, label: t(v) }))),
-      txt(`c${i}_name`, t("e_name")),
+      grid2([sel(`c${i}_type`, t("e_type"), typeOptions(data[`c${i}_type`])), txt(`c${i}_name`, t("e_name"))]),
+      sel(`c${i}_fed`, t("e_fed_by"), feeds),
+      { name: `c${i}_appliance`, label: t("e_appliance"), selector: { object: {} } },
     ]));
   }
 
   return [
     exp(t("e_general"), [
       txt("title", t("e_title")),
-      sel("language", t("e_language"), [{ value: "auto", label: t("auto") }, ...IE_LANGS.map((l) => ({ value: l, label: l.toUpperCase() }))]),
-      sel("flow_style", t("e_flow_style"), [{ value: "arrows", label: t("e_arrows") }, { value: "dashes", label: t("e_dashes") }]),
-      bool("animate", t("e_animate")), bool("dim_inactive", t("e_dim_inactive")), bool("clickable", t("e_clickable")),
-      num("decimals", t("e_decimals"), 0, 3, 1), num("rated_power", t("e_rated_power"), 100, 50000, 100),
+      grid2([
+        sel("language", t("e_language"), [{ value: "auto", label: t("auto") }, ...IE_LANGS.map((l) => ({ value: l, label: l.toUpperCase() }))]),
+        sel("flow_style", t("e_flow_style"), [{ value: "arrows", label: t("e_arrows") }, { value: "dashes", label: t("e_dashes") }]),
+        num("decimals", t("e_decimals"), 0, 3, 1), num("rated_power", t("e_rated_power"), 100, 50000, 100),
+      ]),
+      grid2([bool("animate", t("e_animate")), bool("dim_inactive", t("e_dim_inactive")), bool("clickable", t("e_clickable"))]),
     ]),
     exp(t("e_grid"), [
-      ent("grid_power", power, t("e_grid_power")), bool("grid_invert", t("e_invert")),
-      ent("grid_import", power, t("e_grid_import")), ent("grid_export", power, t("e_grid_export")),
-      sel("grid_meter", t("e_meter"), IE_METERS.map((v) => ({ value: v, label: t(`e_meter_${v}`) }))),
-      txt("grid_name", t("e_name")),
+      ent("grid_power", power, t("e_grid_power")),
+      grid2([ent("grid_import", power, t("e_grid_import")), ent("grid_export", power, t("e_grid_export"))]),
+      grid2([sel("grid_meter", t("e_meter"), IE_METERS.map((v) => ({ value: v, label: t(`e_meter_${v}`) }))), txt("grid_name", t("e_name"))]),
+      grid2([bool("grid_invert", t("e_invert")), bool("grid_pylon", t("e_pylon"))]),
     ]),
     exp(t("e_solar"), [
-      sel("solar_view", t("e_solar_view"), IE_SOLAR_VIEWS.map((v) => ({ value: v, label: t(`e_view_${v}`) }))),
-      num("panel_peak", t("e_panel_peak"), 50, 1000, 5),
+      grid2([
+        sel("solar_view", t("e_solar_view"), IE_SOLAR_VIEWS.map((v) => ({ value: v, label: t(`e_view_${v}`) }))),
+        num("panel_peak", t("e_panel_peak"), 50, 1000, 5),
+      ]),
       ent("solar_power", power, t("e_solar_power")),
-      bool("inverter", t("e_inverter")), ent("inverter_power", power, t("e_inverter_power")),
+      sel("panel_device", t("e_panel_device"), [{ value: "none", label: t("e_pd_none") }, { value: "micro", label: t("e_pd_micro") }, { value: "optim", label: t("e_pd_optim") }]),
+      grid2([bool("inverter", t("e_inverter")), ent("inverter_power", power, t("e_inverter_power"))]),
+      num("strings_count", t("e_strings_count"), 0, IE_MAX_STRINGS, 1),
+      ...strings,
     ]),
-    ...strings,
     exp(t("e_battery"), [
-      ent("battery_power", power, t("e_battery_power")), bool("battery_invert", t("e_invert")),
-      ent("battery_soc", pct, t("e_battery_soc")), num("battery_reserve", t("e_battery_reserve"), 0, 100, 1),
-      txt("battery_name", t("e_name")),
+      grid2([ent("battery_power", power, t("e_battery_power")), ent("battery_soc", pct, t("e_battery_soc"))]),
+      grid2([
+        sel("battery_coupling", t("e_coupling"), [{ value: "home", label: t("e_coupling_home") }, { value: "inverter", label: t("e_coupling_inverter") }]),
+        num("battery_reserve", t("e_battery_reserve"), 0, 100, 1),
+      ]),
+      grid2([bool("battery_invert", t("e_invert")), txt("battery_name", t("e_name"))]),
     ]),
-    exp(t("e_home"), [ent("home_power", power, t("e_home_power")), txt("home_name", t("e_name"))]),
-    ...consumers,
+    exp(t("e_home"), [grid2([ent("home_power", power, t("e_home_power")), txt("home_name", t("e_name"))])]),
+    exp(t("e_consumers"), [num("consumers_count", t("e_consumers_count"), 0, IE_MAX_CONSUMERS, 1), ...consumers]),
   ];
 }
 
 class IllustratedEnergyFlowCardEditor extends HTMLElement {
-  static toForm(cfg) { return ieToForm(cfg); }
+  static toForm(cfg, counts) { return ieToForm(cfg, counts); }
   static fromForm(d, prev) { return ieFromForm(d, prev); }
   static schema(hass, lang, data) { return ieSchema(hass, lang, data); }
 
@@ -1842,6 +2067,9 @@ class IllustratedEnergyFlowCardEditor extends HTMLElement {
     // The echo of what this editor just sent: nothing to rebuild.
     if (this._config && ieSame(next, this._config)) return;
     this._config = next;
+    // The counts follow the config, and never drop below what is chosen.
+    const n = ieCounts(next);
+    this._counts = { strings: Math.max(n.strings, (this._counts && this._counts.strings) || 0), consumers: Math.max(n.consumers, (this._counts && this._counts.consumers) || 0) };
     this._render();
   }
 
@@ -1859,7 +2087,7 @@ class IllustratedEnergyFlowCardEditor extends HTMLElement {
       this.appendChild(this._form);
     }
     const lang = ieLang(this._hass, this._config);
-    const data = ieToForm(this._config);
+    const data = ieToForm(this._config, this._counts || ieCounts(this._config));
     this._form.hass = this._hass;
     this._form.data = data;
     this._form.schema = ieSchema(this._hass, lang, data);
@@ -1869,8 +2097,18 @@ class IllustratedEnergyFlowCardEditor extends HTMLElement {
   _changed(ev) {
     ev.stopPropagation();
     const value = (ev.detail && ev.detail.value) || {};
+    const counts = {
+      strings: Math.max(0, Math.min(IE_MAX_STRINGS, Number(value.strings_count) || 0)),
+      consumers: Math.max(0, Math.min(IE_MAX_CONSUMERS, Number(value.consumers_count) || 0)),
+    };
+    const countsMoved = !this._counts || counts.strings !== this._counts.strings || counts.consumers !== this._counts.consumers;
+    this._counts = counts;
     const next = ieFromForm(value, this._config);
-    if (ieSame(next, this._config)) return;
+    if (ieSame(next, this._config)) {
+      // A new count adds empty sections to fill; the config waits for them.
+      if (countsMoved) this._render();
+      return;
+    }
     this._config = next;
     this._render();
     this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: next }, bubbles: true, composed: true }));

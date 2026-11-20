@@ -99,3 +99,44 @@ function iePlugHtml(on) {
 <path d="M48 74 C48 86 60 88 60 98" fill="none" stroke="#3a4148" stroke-width="2.4" stroke-linecap="round"/>
 </svg></div>`;
 }
+
+// A lattice transmission pylon: two legs tapering up, braced in X, two cross
+// arms with their hanging insulators and the lines running off to the left,
+// a few trees at its foot. Where the grid comes from.
+function iePylonHtml(on) {
+  // The legs run from (28, 98) and (68, 98) up to (46, 14) and (50, 14).
+  const lx = (y) => 28 + (98 - y) * (18 / 84), rx = (y) => 68 - (98 - y) * (18 / 84);
+  const ys = [98, 82, 66, 52, 40];
+  let brace = "";
+  for (let i = 0; i < ys.length - 1; i++) {
+    const a = ys[i], b = ys[i + 1];
+    brace += `M${f1(lx(a))} ${a} L${f1(rx(b))} ${b} M${f1(rx(a))} ${a} L${f1(lx(b))} ${b} M${f1(lx(b))} ${b} H${f1(rx(b))} `;
+  }
+  const ins = (x, y) => `<path d="M${x} ${y} V${y + 6}" stroke="#8a949c" stroke-width="1.2"/><path d="M${x - 1.6} ${y + 1.5} H${x + 1.6} M${x - 1.6} ${y + 3} H${x + 1.6} M${x - 1.6} ${y + 4.5} H${x + 1.6}" stroke="#c7cfd5" stroke-width=".9"/>`;
+  const tree = (x, s) => `<path d="M${x} ${98} V${98 - 6 * s}" stroke="#6d4c41" stroke-width="${1.2 * s}"/><path d="M${x} ${98 - 22 * s} L${x - 7 * s} ${98 - 6 * s} H${x + 7 * s} Z" fill="#4f8a5b"/><path d="M${x} ${98 - 26 * s} L${x - 5 * s} ${98 - 13 * s} H${x + 5 * s} Z" fill="#5e9e69"/>`;
+  return `<div class="machine ie-pylon${on ? " on" : ""}"><svg class="ie-e" viewBox="0 0 96 108">
+<ellipse cx="48" cy="99" rx="34" ry="2.6" fill="#000" opacity=".14"/>
+<path d="M28 98 L46 14 M68 98 L50 14 M46 14 H50" stroke="#7d868e" stroke-width="1.8" fill="none" stroke-linejoin="round"/>
+<path d="${brace.trim()}" stroke="#9aa3ab" stroke-width=".8" fill="none"/>
+<path d="M30 40 H66 M36 26 H60" stroke="#7d868e" stroke-width="1.6"/>
+${ins(32, 40)}${ins(64, 40)}${ins(38, 26)}${ins(58, 26)}
+<path class="ie-wire-l" d="M-14 52 Q12 42 32 46 M-14 58 Q30 50 64 46 M-14 38 Q16 30 38 32" stroke="#56606a" stroke-width=".7" fill="none"/>
+<path d="M48 8 V14" stroke="#7d868e" stroke-width="1.2"/><circle cx="48" cy="8" r="1.2" fill="#e53935"/>
+${tree(14, 0.9)}${tree(22, 0.65)}${tree(82, 0.8)}
+</svg></div>`;
+}
+
+// A microinverter, under its panel: a small dark box with cooling ribs, its
+// status LED and the AC cable leaving it. One per panel, as Enphase, Hoymiles
+// or APsystems fit them. An optimiser (Tigo, SolarEdge) is the same small box,
+// narrower and without a LED, the central inverter doing the rest.
+function ieMicro(cx, y, on, animate, optimizer) {
+  if (optimizer) {
+    const w = 14, h = 9, x = cx - w / 2;
+    return `<g class="ie-optim"><rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="1.6" fill="#3a4148" stroke="#1b2025" stroke-width=".6"/><path d="M${f1(x + 3)} ${f1(y + 4.5)} H${f1(x + w - 3)}" stroke="#596370" stroke-width=".8"/></g>`;
+  }
+  const w = 18, h = 10, x = cx - w / 2;
+  return `<g class="ie-micro"><rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="2" fill="#2e353c" stroke="#1b2025" stroke-width=".6"/>
+<path d="M${f1(x + 3)} ${f1(y + 3)} H${f1(x + w - 6)} M${f1(x + 3)} ${f1(y + 5)} H${f1(x + w - 6)} M${f1(x + 3)} ${f1(y + 7)} H${f1(x + w - 6)}" stroke="#4a535c" stroke-width=".7"/>
+<circle cx="${f1(x + w - 3)}" cy="${f1(y + h / 2)}" r="1.2" fill="${on ? "#43e07a" : "#55606a"}">${on && animate ? `<animate attributeName="opacity" values="1;.4;1" dur="2.2s" repeatCount="indefinite"/>` : ""}</circle></g>`;
+}

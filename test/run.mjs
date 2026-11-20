@@ -33,7 +33,7 @@ const cfg = {
   grid: { power_entity: "sensor.grid" },
   solar: { strings: [{ name: "South", panels: ["sensor.p1", { entity: "sensor.p2", name: "Two" }, "sensor.p3"] }, { name: "West", power_entity: "sensor.mppt2" }] },
   battery: { power_entity: "sensor.bat", soc_entity: "sensor.soc" },
-  consumers: [{ entity: "sensor.ev", type: "ev_charger" }, { entity: "sensor.plug", type: "nonsense" }],
+  consumers: [{ entity: "sensor.ev", type: "ev_charger" }, { entity: "sensor.plug", type: "Bad type!" }],
 };
 
 // ── Languages ────────────────────────────────────────────────────────────────
@@ -120,6 +120,9 @@ const src = fs.readFileSync(dist, "utf8");
   check("first consumer below the panels", L.consumers[0].y - 54 > L.bus, true);
   check("battery below the grid", L.battery.y - L.grid.y >= 170, true);
   check("height covers the last consumer", L.height >= L.consumers[4].y + 54 + 58, true);
+  const narrow = { solar: { strings: [{ name: "Panel 1", panels: ["sensor.p1"] }, { name: "Panel 2", panels: ["sensor.p2"] }] } };
+  const NL = Card.computeLayout(Card.computeModel(hassOf(base), narrow), narrow);
+  check("one-panel strings leave room for both labels", NL.groups[1].cx - NL.groups[0].cx >= ("Panel 1".length + 10) * 6.8 + 11.9, true);
   const lone = Card.computeLayout(Card.computeModel(hassOf(base), { grid: { power_entity: "sensor.grid" } }), { grid: { power_entity: "sensor.grid" } });
   check("no solar: no panels and no inverter", lone.groups.length === 0 && !lone.inv, true);
   check("grid alone sits level with the house", lone.grid.y, lone.house.by - 50);
@@ -145,6 +148,7 @@ const draw = (config, states = base, lang = "en") => {
   contains("inverter drawn", html, "Inverter");
   contains("EV charger drawn", html, "ev-box");
   contains("generic consumer drawn as a plug", html, "ie-plug");
+  contains("idle consumer flow dimmed", html, '<g class="dim"><path class="ie-track"');
   contains("idle plug dimmed", html, 'node dim hit" data-entity="sensor.plug"');
   contains("panels clickable", html, 'data-entity="sensor.p1"');
   contains("arrowheads animated by default", html, "<animateMotion");
@@ -191,6 +195,87 @@ const draw = (config, states = base, lang = "en") => {
 
   const esc = draw({ ...cfg, home: { name: "<b>" } });
   check("names are escaped", esc.includes("<b>Home") || esc.includes(">"+"<b>"+"<"), false);
+}
+
+// ── 0.2.0: microinverters, battery on the inverter, pylon, chains ────────────
+{
+  const micro = { ...cfg, solar: { ...cfg.solar, microinverters: true } };
+  const mm = Card.computeModel(hassOf(base), micro);
+  check("microinverters: no central inverter", mm.showInverter, false);
+  const mhtml = draw(micro);
+  check("microinverters: one box per drawn panel", (mhtml.match(/class="ie-micro"/g) || []).length, 6);
+  check("microinverters: no inverter drawn", mhtml.includes(">Inverter<"), false);
+
+  const opt = { ...cfg, solar: { ...cfg.solar, optimizers: true } };
+  check("optimisers: the central inverter stays", Card.computeModel(hassOf(base), opt).showInverter, true);
+  check("optimisers: one box per drawn panel", (draw(opt).match(/class="ie-optim"/g) || []).length, 6);
+  check("microinverters win over optimisers", Card.computeModel(hassOf(base), { solar: { ...cfg.solar, microinverters: true, optimizers: true } }).optimizers, false);
+  const fo2 = Editor.toForm(opt);
+  check("editor reads the optimisers", fo2.panel_device, "optim");
+  check("editor writes the optimisers back", Editor.fromForm(fo2, opt).solar.optimizers, true);
+  const dc = { ...cfg, battery: { ...cfg.battery, coupling: "inverter" } };
+  const dm = Card.computeModel(hassOf(base), dc);
+  check("battery on the inverter: flagged", dm.batteryOnInverter, true);
+  check("battery on the inverter: left out of the home", dm.home, 1020);
+  const DL = Card.computeLayout(dm, dc);
+  check("battery on the inverter: level with it", DL.battery.y, DL.inv.y);
+  check("battery on the inverter: grid moved below the house", DL.grid.y > DL.house.by, true);
+  const dhtml = draw(dc);
+  contains("battery flow ends at the inverter", dhtml, `path="M ${DL.inv.x - 34}`);
+
+  const py = { ...cfg, grid: { power_entity: "sensor.grid", pylon: true } };
+  const PL = Card.computeLayout(Card.computeModel(hassOf(base), py), py);
+  check("pylon: stage widened on the left", PL.width, 560 + 110);
+  check("pylon: drawn beside the meter", PL.pylon && PL.pylon.y === PL.grid.y && PL.pylon.x < PL.grid.x, true);
+  contains("pylon drawn", draw(py), "ie-pylon");
+  const noGridPylon = Card.computeLayout(Card.computeModel(hassOf(base), { grid: { pylon: true } }), { grid: { pylon: true } });
+  check("pylon without a grid sensor: not drawn", noGridPylon.pylon, null);
+  check("pylon without a grid sensor: no room kept for it", noGridPylon.width, 560);
+
+  const chain = { ...cfg, consumers: [{ entity: "sensor.ev", type: "ups", children: ["sensor.plug", { entity: "sensor.p1", type: "network" }] }] };
+  const cm = Card.computeModel(hassOf(base), chain);
+  check("chain: children read", cm.consumers[0].children.length, 2);
+  check("chain: grandchildren ignored", Card.computeModel(hassOf(base), { consumers: [{ entity: "sensor.ev", children: [{ entity: "sensor.p1", children: ["sensor.p2"] }] }] }).consumers[0].children[0].children.length, 0);
+  const CL = Card.computeLayout(cm, chain);
+  check("chain: stage widened on the right", CL.width, 760);
+  check("chain: children in a second column", CL.consumers[0].children.every((q) => q.x === CL.consumers[0].x + 200), true);
+  check("chain: children far enough apart", CL.consumers[0].children[1].y - CL.consumers[0].children[0].y >= 165, true);
+  check("chain: parent centred on its children", CL.consumers[0].y, (CL.consumers[0].children[0].y + CL.consumers[0].children[1].y) / 2);
+  const chtml = draw(chain);
+  contains("chain: child flow starts at the parent", chtml, `path="M ${CL.consumers[0].x + 52}`);
+  const cc = new Card();
+  cc.setConfig(chain);
+  let n = 0;
+  const orig = cc._render.bind(cc);
+  cc._render = () => { n++; orig(); };
+  cc.hass = hassOf(base);
+  cc.hass = hassOf({ ...base, "sensor.plug": S(42) });
+  check("chain: a child's sensor moving redraws", n, 2);
+}
+
+// ── HA Appliance Card draws the consumers when installed ─────────────────────
+{
+  const before = draw({ consumers: [{ entity: "sensor.ev", type: "printer_3d" }] });
+  check("without HA Appliance Card: a plug stands in", before.includes("ie-plug") && !before.includes("ie-ac"), true);
+  customElements.define("ha-appliance-card", class extends HTMLElement { setConfig(c) { this.cfg = c; } });
+  const card = new Card();
+  card.setConfig({ consumers: [{ entity: "sensor.ev", type: "printer_3d", appliance: { show_history: true } }, { entity: "sensor.plug" }] });
+  card.hass = hassOf(base);
+  contains("with HA Appliance Card: a placeholder for it", card._wrap.innerHTML, 'data-ac="c0"');
+  check("a generic consumer stays a plug", card._wrap.innerHTML.includes('data-ac="c1"'), false);
+  const rec = card._ac && card._ac.get("c0");
+  check("HA Appliance Card element created", !!rec, true);
+  check("given the appliance type", rec && rec.el.cfg.appliance_type, "printer_3d");
+  check("given the power sensor as state and power", rec && rec.el.cfg.state_entity === "sensor.ev" && rec.el.cfg.power_entity === "sensor.ev", true);
+  check("drawing only: no name, no state, no power line", rec && rec.el.cfg.show_name === false && rec.el.cfg.show_state === false && rec.el.cfg.hidden_lines.includes("power"), true);
+  check("extra appliance options passed on", rec && rec.el.cfg.show_history, true);
+  const el = rec.el;
+  card.hass = hassOf({ ...base, "sensor.ev": S(10) });
+  check("the same element is kept across redraws", card._ac.get("c0").el, el);
+  check("the element gets the new hass", el.hass.states["sensor.ev"].state, "10");
+  const quiet = hassOf({ ...base, "sensor.ev": S(10), "sensor.unrelated": S(1) });
+  card.hass = quiet;
+  check("the element gets hass even when the card does not redraw", el.hass, quiet);
 }
 
 // ── Redraw only when a watched entity moves ──────────────────────────────────
@@ -254,6 +339,40 @@ const draw = (config, states = base, lang = "en") => {
   check("power pickers list only W/kW sensors", flat.includes("sensor.soc") && !/"grid_power"[^}]*sensor\.soc/.test(flat), true);
   const socField = JSON.stringify(power.find((s) => JSON.stringify(s).includes("battery_soc")));
   check("level picker lists % sensors", socField.includes("sensor.soc") && !socField.slice(socField.indexOf("battery_soc")).split("battery_reserve")[0].includes("sensor.grid"), true);
+}
+
+// ── Editor 0.2.0: counts and consumers feeding others ────────────────────────
+{
+  const ch = { consumers: [{ entity: "sensor.ev", type: "ups", children: [{ entity: "sensor.p1", name: "Box" }] }, { entity: "sensor.plug" }] };
+  const f = Editor.toForm(ch);
+  check("flat list: 3 consumers counted", f.consumers_count, 3);
+  check("flat list: the child is fed by consumer 1", f.c2_fed, "1");
+  check("flat list: the second top consumer is fed by the home", f.c3_fed, "0");
+  const back = Editor.fromForm(f, ch);
+  check("round trip keeps the chain", JSON.stringify(back.consumers), JSON.stringify(ch.consumers));
+  f.c3_fed = "1";
+  const moved = Editor.fromForm(f, ch);
+  check("feeding a consumer from another nests it", moved.consumers.length === 1 && moved.consumers[0].children.length === 2, true);
+  const f2 = Editor.toForm(ch); f2.consumers_count = 1;
+  check("lowering the count drops the last consumers", JSON.stringify(Editor.fromForm(f2, ch).consumers), JSON.stringify([{ entity: "sensor.ev", type: "ups" }]));
+  const sch = JSON.stringify(Editor.schema(hassOf(base), "en", Editor.toForm({}, { strings: 2, consumers: 0 })));
+  check("schema: two string sections when two are chosen", (sch.match(/"title":"String \d/g) || []).length, 2);
+  check("schema: no consumer section when none is chosen", sch.includes('"title":"Consumer 1'), false);
+  const sx = JSON.stringify(Editor.schema(hassOf(base), "en", Editor.toForm({ consumers: [{ entity: "sensor.ev", type: "sauna" }] })));
+  check("a type outside the list is offered as it is", sx.includes('{"value":"sauna","label":"sauna"}'), true);
+  check("listed types show their name", sx.includes('{"value":"printer_3d","label":"3D printer"}'), true);
+  const ed = new Editor();
+  ed.hass = hassOf(base);
+  ed.setConfig({});
+  const v = Editor.toForm({}, { strings: 0, consumers: 0 }); v.consumers_count = 2;
+  ed._changed({ stopPropagation() {}, detail: { value: v } });
+  check("raising a count alone sends no config", ed.events.length, 0);
+  check("raising a count keeps it for the form", ed._counts.consumers, 2);
+  const dcf = Editor.toForm({}); dcf.battery_power = "sensor.bat"; dcf.battery_coupling = "inverter"; dcf.grid_power = "sensor.grid"; dcf.grid_pylon = true; dcf.panel_device = "micro"; dcf.solar_power = "sensor.pv";
+  const o = Editor.fromForm(dcf, {});
+  check("form writes the battery coupling", o.battery.coupling, "inverter");
+  check("form writes the pylon", o.grid.pylon, true);
+  check("form writes the microinverters", o.solar.microinverters, true);
 }
 
 // ── Stub config ──────────────────────────────────────────────────────────────
