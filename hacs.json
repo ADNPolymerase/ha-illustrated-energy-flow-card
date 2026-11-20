@@ -1,0 +1,6 @@
+{
+  "name": "Illustrated Energy Flow Card",
+  "render_readme": true,
+  "filename": "illustrated-energy-flow-card.js",
+  "homeassistant": "2024.1.0"
+}
