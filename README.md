@@ -95,8 +95,8 @@ consumers:
 | `battery.coupling` | `home` | `home`, or `inverter` for a battery on the inverter's DC side |
 | `home.power_entity` | computed | Home consumption |
 | `consumers` | | List: `entity`, `name`, `type`, `appliance`, `children` |
-| `consumers[].type` | `generic` | Any HA Appliance Card type (`washer`, `printer_3d`, `fridge`, `network`, `ups`...), or `ev_charger`, `heat_pump`, `water_heater`, `generic` without it |
-| `consumers[].appliance` | | Extra HA Appliance Card options for the drawing, such as `state_entity` for a drawing that follows an on/off state |
+| `consumers[].type` | `generic` | Any HA Appliance Card type (`washer`, `printer_3d`, `filament_dryer`, `fridge`, `network`, `ups`...), or `ev_charger`, `heat_pump`, `water_heater`, `generic` without it. `printer` is drawn by HA Printer Card |
+| `consumers[].appliance` | | Extra options for the card that draws it: HA Appliance Card (`state_entity` for a drawing that follows an on/off state...), or HA Printer Card for a `printer` (`entity` for its status sensor, `printer_type`, `state_map`, `printing_watts`). Without a status sensor, a printer is ready while its plug draws power and printing above 50 W |
 | `consumers[].children` | | Consumers fed by this one (one level) |
 | `consumers_hide_below` | | Hide the consumers drawing this power or less (W), and the unavailable ones. A consumer that stops stays two minutes, one feeding another at work stays. Empty: all shown |
 | `consumers_layout` | `auto` | `column`, `columns` (two staggered columns, much less tall) or `compact` (smaller drawings, closer together). `auto` takes two columns past three consumers, one column when a consumer feeds others |

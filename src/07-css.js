@@ -30,6 +30,11 @@ const IE_CSS = `
   /* HA Appliance Card draws its picture 16 px down and 17 px in: lifted so it
      sits where the other drawings sit. */
   .node .ie-ac > ha-appliance-card, .lk .ie-ac > ha-appliance-card { position: absolute; left: 0; top: -16px; width: 130px; }
+  /* HA Printer Card: drawn 330 px wide, its 190 x 142 picture brought into
+     the box and the rest of the card left outside it. Clicks go to the node. */
+  .ie-pc { overflow: hidden; }
+  .ie-ac.ie-pc > ha-printer-card { position: absolute; left: 0; top: 0; width: ${IE_PC_W}px; transform-origin: 0 0; transform: translate(0, 5px) scale(.684) translate(-70px, -16px); pointer-events: none;
+    --ha-card-background: transparent; --card-background-color: transparent; --ha-card-box-shadow: none; --ha-card-border-width: 0; }
   /* Compact consumers: the drawing at three quarters, its labels unchanged. */
   .node.cmp > .machine, .node.cmp > .ie-ac { transform: scale(.75); transform-origin: 50% 0; margin-bottom: -27px; }
   /* Light style: the drawing at half size (a 130 x 108 box), the name and

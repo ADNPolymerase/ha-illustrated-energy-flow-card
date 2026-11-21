@@ -95,8 +95,8 @@ consumers:
 | `battery.coupling` | `home` | `home`, ou `inverter` pour une batterie côté continu de l'onduleur |
 | `home.power_entity` | calculée | Consommation de la maison |
 | `consumers` | | Liste : `entity`, `name`, `type`, `appliance`, `children` |
-| `consumers[].type` | `generic` | Tout type de HA Appliance Card (`washer`, `printer_3d`, `fridge`, `network`, `ups`...), ou `ev_charger`, `heat_pump`, `water_heater`, `generic` sans elle |
-| `consumers[].appliance` | | Options supplémentaires de HA Appliance Card pour le dessin, par exemple `state_entity` pour un dessin qui suit un état marche/arrêt |
+| `consumers[].type` | `generic` | Tout type de HA Appliance Card (`washer`, `printer_3d`, `filament_dryer`, `fridge`, `network`, `ups`...), ou `ev_charger`, `heat_pump`, `water_heater`, `generic` sans elle. `printer` est dessiné par HA Printer Card |
+| `consumers[].appliance` | | Options supplémentaires de la carte qui le dessine : HA Appliance Card (`state_entity` pour un dessin qui suit un état marche/arrêt...), ou HA Printer Card pour une `printer` (`entity` pour son capteur d'état, `printer_type`, `state_map`, `printing_watts`). Sans capteur d'état, une imprimante est prête tant que sa prise consomme, et imprime au-delà de 50 W |
 | `consumers[].children` | | Consommateurs alimentés par celui-ci (un niveau) |
 | `consumers_hide_below` | | Masque les consommateurs qui tirent cette puissance ou moins (W), et ceux indisponibles. Un consommateur qui s'arrête reste deux minutes, celui qui en alimente un autre en marche reste. Vide : tous affichés |
 | `consumers_layout` | `auto` | `column`, `columns` (deux colonnes décalées, bien moins haute) ou `compact` (dessins plus petits et plus serrés). `auto` passe en deux colonnes au-delà de trois consommateurs, une colonne quand un consommateur en alimente d'autres |

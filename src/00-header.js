@@ -35,7 +35,11 @@ const IE_LANGS = ["en", "fr", "de", "es", "it", "nl"];
 // works when that card is installed (it draws them); without it, the first
 // four are drawn here and every other one as a smart plug.
 const IE_BUILTIN_TYPES = ["generic", "ev_charger", "heat_pump", "water_heater"];
-const IE_CONSUMER_TYPES = [...IE_BUILTIN_TYPES, "washer", "dryer", "dishwasher", "fridge", "oven", "cooktop", "microwave", "kettle", "coffee", "printer_3d", "screen", "network", "ups", "air_conditioner", "space_heater", "dehumidifier", "pool_pump", "spa", "robot", "lamp"];
+const IE_CONSUMER_TYPES = [...IE_BUILTIN_TYPES, "printer", "washer", "dryer", "dishwasher", "fridge", "oven", "cooktop", "microwave", "kettle", "coffee", "printer_3d", "filament_dryer", "drying_rack", "screen", "network", "ups", "air_conditioner", "space_heater", "dehumidifier", "pool_pump", "spa", "robot", "lamp"];
+// Drawn by HA Printer Card (ADNPolymerase/ha-printer-card) when installed.
+const IE_PRINTER_TYPE = "printer";
+// Power above which a printer drawn from its plug alone is printing (W).
+const IE_PRINTING_W = 50;
 const IE_METERS = ["box", "linky", "dome"];
 const IE_CONSUMER_LAYOUTS = ["auto", "column", "columns", "compact"];
 // "drawn": the consumers drawn full size; "light": drawn at half size,
@@ -56,5 +60,8 @@ const IE_HIDE_HOLD = 120000;
 // The box a HA Appliance Card drawing sits in.
 const IE_AC_W = 130;
 const IE_AC_H = 108;
+// An embedded HA Printer Card is 330 px wide so its picture keeps its full
+// 190 px; only that picture shows through the box.
+const IE_PC_W = 330;
 // What an embedded HA Appliance Card must not show under its drawing.
 const IE_AC_HIDE_CSS = ".info-lines, .line-menu, .sliders, .history, .history-toggle { display: none !important; }";

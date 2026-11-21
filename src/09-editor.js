@@ -187,6 +187,9 @@ function ieSchema(hass, lang, data) {
   const pct = ieUnitList(hass, ["%"]);
   // Without HA Appliance Card, only the built-in types have their drawing.
   const noAc = typeof customElements !== "undefined" && !customElements.get("ha-appliance-card");
+  const noPc = typeof customElements !== "undefined" && !customElements.get("ha-printer-card");
+  // The type label warns when the card that draws that type is missing.
+  const typeLabel = (v) => v === IE_PRINTER_TYPE ? (noPc ? t("e_type_nopc") : t("e_type")) : noAc && v && !IE_BUILTIN_TYPES.includes(v) ? t("e_type_noac") : t("e_type");
   const st = (hass && hass.states) || {};
   const pctSet = Object.keys(st).filter((id) => /^(sensor|number|input_number)\./.test(id) && String((st[id].attributes || {}).unit_of_measurement || "") === "%").sort();
   const ent = (name, list, label, multiple) => ({ name, label, selector: { entity: { include_entities: list, ...(multiple ? { multiple: true } : {}) } } });
@@ -224,7 +227,7 @@ function ieSchema(hass, lang, data) {
     const name = data[`c${i}_name`] || (data[`c${i}_entity`] ? t(data[`c${i}_type`] || "generic") : "");
     consumers.push(exp(name ? `${t("e_consumer", { n: i })} · ${name}` : t("e_consumer", { n: i }), [
       ent(`c${i}_entity`, power, t("e_entity")),
-      grid2([sel(`c${i}_type`, noAc && data[`c${i}_type`] && !IE_BUILTIN_TYPES.includes(data[`c${i}_type`]) ? t("e_type_noac") : t("e_type"), typeOptions(data[`c${i}_type`])), txt(`c${i}_name`, t("e_name"))]),
+      grid2([sel(`c${i}_type`, typeLabel(data[`c${i}_type`]), typeOptions(data[`c${i}_type`])), txt(`c${i}_name`, t("e_name"))]),
       sel(`c${i}_fed`, t("e_fed_by"), feeds),
       { name: `c${i}_appliance`, label: t("e_appliance"), selector: { object: {} } },
     ]));

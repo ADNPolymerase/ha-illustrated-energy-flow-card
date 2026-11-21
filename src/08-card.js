@@ -233,32 +233,44 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     this._built = true;
   }
 
-  // The HA Appliance Card elements live across redraws: created once per
-  // consumer, given their config again only when it changes, and moved into
-  // the fresh placeholders.
+  // The HA Appliance Card and HA Printer Card elements live across redraws:
+  // created once per consumer, given their config again only when it
+  // changes, and moved into the fresh placeholders.
   _mountAppliances(list) {
     this._ac = this._ac || new Map();
     const keep = new Set();
-    for (const { key, cm } of list) {
+    for (const { key, cm, kind } of list) {
       const holder = this._wrap.querySelector(`[data-ac="${key}"]`);
       if (!holder) continue;
+      const tag = kind === "printer" ? "ha-printer-card" : "ha-appliance-card";
       let rec = this._ac.get(key);
-      if (!rec) {
-        rec = { el: document.createElement("ha-appliance-card"), sig: "" };
+      if (!rec || rec.tag !== tag) {
+        rec = { el: document.createElement(tag), sig: "", tag };
         this._ac.set(key, rec);
       }
       const extra = cm.appliance || {};
-      // Some drawings follow an on/off state, not a power (a wall drying rack
-      // unfolds on "on"): they get one made from the consumer's power, unless
-      // the config names its own state entity.
-      const synth = IE_ONOFF_TYPES.includes(cm.type) && !extra.state_entity ? `binary_sensor.ie_flow_${key}` : "";
-      const conf = { type: "custom:ha-appliance-card", appliance_type: cm.type, state_entity: synth || cm.entity, power_entity: cm.entity, show_name: false, show_state: false, transparent: true, hidden_lines: ["power"], ...extra };
+      let synth = "", conf;
+      if (kind === "printer") {
+        // The printer's own status sensor when given; otherwise one made from
+        // the plug's power (on: ready, off: offline), and printing above
+        // IE_PRINTING_W. Nothing but the picture is kept.
+        synth = extra.entity ? "" : `sensor.ie_flow_${key}`;
+        conf = { type: "custom:ha-printer-card", entity: synth || extra.entity, power_entity: cm.entity, printing_watts: IE_PRINTING_W, show_supplies: false, show_message: false, show_parts: false, show_counters: false, show_power: false, more_info: false, ...extra };
+      } else {
+        // Some drawings follow an on/off state, not a power (a wall drying
+        // rack unfolds on "on"): they get one made from the consumer's power,
+        // unless the config names its own state entity.
+        synth = IE_ONOFF_TYPES.includes(cm.type) && !extra.state_entity ? `binary_sensor.ie_flow_${key}` : "";
+        conf = { type: "custom:ha-appliance-card", appliance_type: cm.type, state_entity: synth || cm.entity, power_entity: cm.entity, show_name: false, show_state: false, transparent: true, hidden_lines: ["power"], ...extra };
+      }
       const sig = JSON.stringify(conf);
       if (rec.sig !== sig) {
         try { rec.el.setConfig(conf); rec.sig = sig; } catch (e) { rec.sig = ""; }
       }
       rec.el.hass = synth ? this._synthHass(rec, synth, cm.w) : this._hass;
       if (rec.el.parentNode !== holder) holder.appendChild(rec.el);
+      keep.add(key);
+      if (kind === "printer") continue;
       // Only its picture: the lines, sliders and history it draws under it
       // (a hob's cooking zones) would spill over the name and the value.
       const root = rec.el.shadowRoot;
@@ -268,7 +280,6 @@ class IllustratedEnergyFlowCard extends HTMLElement {
         st.textContent = IE_AC_HIDE_CSS;
         root.appendChild(st);
       }
-      keep.add(key);
       this._fitAppliance(rec.el);
     }
     for (const k of [...this._ac.keys()]) if (!keep.has(k)) this._ac.delete(k);
@@ -515,6 +526,8 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     // A consumer is drawn by HA Appliance Card when it is installed, as that
     // card draws it on its own page; otherwise by the drawings copied here.
     const acReady = typeof customElements !== "undefined" && !!customElements.get("ha-appliance-card");
+    // A printer is drawn by HA Printer Card, the same way.
+    const pcReady = typeof customElements !== "undefined" && !!customElements.get("ha-printer-card");
     const wantAc = [];
     // Light: the same drawing at half size, the name and power beside it.
     const lightNode = (pos, cm, html, on) => {
@@ -524,9 +537,14 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     const consumerNode = (pos, cm, key) => {
       const on = cm.w !== null && cm.w > IE_ON_W;
       let html;
-      if (cm.type !== "generic" && acReady) {
+      if (cm.type === IE_PRINTER_TYPE) {
+        if (pcReady) {
+          html = `<div class="ie-ac ie-pc" data-ac="${esc(key)}"></div>`;
+          wantAc.push({ key, cm, kind: "printer" });
+        } else html = iePlugHtml(on);
+      } else if (cm.type !== "generic" && acReady) {
         html = `<div class="ie-ac" data-ac="${esc(key)}"></div>`;
-        wantAc.push({ key, cm });
+        wantAc.push({ key, cm, kind: "appliance" });
       } else if (cm.type === "ev_charger") html = D.ev.draw("", { ev: { mode: on ? "charging" : "connected", plugged: true, flow: 0.5 } }).replace('class="machine', `style="--ie-ev:${on ? "#2196f3" : "#26a69a"}" class="machine`);
       else if (cm.type === "heat_pump") html = D.hp.draw("", { hpMode: on ? "space_heating" : "idle", noTank: true });
       else if (cm.type === "water_heater") html = D.wh.draw(on ? "heating" : "", { tankTemp: on ? 55 : 40 });
@@ -539,9 +557,14 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       nodes += consumerNode(p, cm, cm.key);
       p.children.forEach((q, j) => { nodes += consumerNode(q, cm.children[j], cm.children[j].key); });
     });
-    if (!acReady && m.consumers.some((k) => k.type !== "generic" || k.children.some((x) => x.type !== "generic")) && !this._acWait && typeof customElements !== "undefined" && customElements.whenDefined) {
+    const types = m.consumers.flatMap((k) => [k.type, ...k.children.map((x) => x.type)]);
+    if (!acReady && types.some((x) => x !== "generic" && x !== IE_PRINTER_TYPE) && !this._acWait && typeof customElements !== "undefined" && customElements.whenDefined) {
       this._acWait = true;
       customElements.whenDefined("ha-appliance-card").then(() => { this._sig = null; if (this._hass) this._render(); });
+    }
+    if (!pcReady && types.includes(IE_PRINTER_TYPE) && !this._pcWait && typeof customElements !== "undefined" && customElements.whenDefined) {
+      this._pcWait = true;
+      customElements.whenDefined("ha-printer-card").then(() => { this._sig = null; if (this._hass) this._render(); });
     }
 
     this._wrap.innerHTML = `<div class="stage" style="width:${L.width}px;height:${L.height}px">${svg}${nodes}</div>`;

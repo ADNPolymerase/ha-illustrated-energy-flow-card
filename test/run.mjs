@@ -555,6 +555,35 @@ const draw = (config, states = base, lang = "en") => {
   check("editor: a built-in type is not flagged", (sc.match(/drawn as a plug/g) || []).length, hasAc ? 0 : 1);
 }
 
+// ── HA Printer Card draws a printer when installed ───────────────────────────
+{
+  const pcfg = { consumers: [{ entity: "sensor.ev", type: "printer", name: "Office printer" }, { entity: "sensor.plug", type: "printer", appliance: { entity: "sensor.hp_status", printer_type: "laser" } }] };
+  const before = draw(pcfg);
+  check("printer without HA Printer Card: a plug stands in", before.includes("ie-plug") && !before.includes("ie-pc"), true);
+  const ed0 = JSON.stringify(Editor.schema(hassOf(base), "en", Editor.toForm(pcfg)));
+  check("editor: a printer without HA Printer Card is flagged", ed0.includes("install HA Printer Card"), true);
+  customElements.define("ha-printer-card", class extends HTMLElement { setConfig(c) { this.cfg = c; } });
+  const card = new Card();
+  card.setConfig(pcfg);
+  card.hass = hassOf({ ...base, "sensor.hp_status": S("idle", "") });
+  contains("printer: a placeholder for HA Printer Card", card._wrap.innerHTML, 'class="ie-ac ie-pc" data-ac="c0"');
+  const a = card._ac.get("c0"), b = card._ac.get("c1");
+  check("printer: a HA Printer Card element", a && a.tag, "ha-printer-card");
+  check("printer: status made from the plug when none given", a.el.cfg.entity, "sensor.ie_flow_c0");
+  check("printer: on at the plug reads as ready", a.el.hass.states["sensor.ie_flow_c0"].state, "on");
+  check("printer: printing above the threshold", a.el.cfg.power_entity === "sensor.ev" && a.el.cfg.printing_watts, 50);
+  check("printer: only the picture", ["show_supplies", "show_message", "show_parts", "show_counters", "show_power", "more_info"].every((k) => a.el.cfg[k] === false), true);
+  check("printer: the printer's own status sensor wins", b.el.cfg.entity === "sensor.hp_status" && b.el.cfg.printer_type === "laser", true);
+  check("printer: real hass with its own sensor", b.el.hass.states["sensor.hp_status"].state === "idle" && !("sensor.ie_flow_c1" in b.el.hass.states), true);
+  check("printer: not handed to HA Appliance Card", !!card._wrap.innerHTML.match(/data-ac="c[01]"/g) && card._wrap.innerHTML.includes('class="ie-ac" data-ac'), false);
+  const ed1 = JSON.stringify(Editor.schema(hassOf(base), "en", Editor.toForm(pcfg)));
+  check("editor: no flag once HA Printer Card is there", ed1.includes("install HA Printer Card"), false);
+  const light = new Card();
+  light.setConfig({ ...pcfg, style: "light" });
+  light.hass = hassOf(base);
+  contains("printer: drawn at half size in the light style", light._wrap.innerHTML, '<div class="lk"><div class="ie-ac ie-pc" data-ac="c0">');
+}
+
 // ── Stub config ──────────────────────────────────────────────────────────────
 {
   const stub = Card.getStubConfig(hassOf({ "sensor.grid_power": S(10), "sensor.solar_power": S(10), "sensor.battery_power": S(1), "sensor.battery_level": S(50, "%") }));
