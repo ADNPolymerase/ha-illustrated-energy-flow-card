@@ -130,12 +130,12 @@ ${tree(14, 0.9)}${tree(22, 0.65)}${tree(82, 0.8)}
 // status LED and the AC cable leaving it. One per panel, as Enphase, Hoymiles
 // or APsystems fit them. An optimiser (Tigo, SolarEdge) is the same small box,
 // narrower and without a LED, the central inverter doing the rest.
-function ieMicro(cx, y, on, animate, optimizer) {
+function ieMicro(cx, y, on, animate, optimizer, width) {
   if (optimizer) {
     const w = 14, h = 9, x = cx - w / 2;
     return `<g class="ie-optim"><rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="1.6" fill="#3a4148" stroke="#1b2025" stroke-width=".6"/><path d="M${f1(x + 3)} ${f1(y + 4.5)} H${f1(x + w - 3)}" stroke="#596370" stroke-width=".8"/></g>`;
   }
-  const w = 18, h = 10, x = cx - w / 2;
+  const w = width || 18, h = 10, x = cx - w / 2;
   return `<g class="ie-micro"><rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="2" fill="#2e353c" stroke="#1b2025" stroke-width=".6"/>
 <path d="M${f1(x + 3)} ${f1(y + 3)} H${f1(x + w - 6)} M${f1(x + 3)} ${f1(y + 5)} H${f1(x + w - 6)} M${f1(x + 3)} ${f1(y + 7)} H${f1(x + w - 6)}" stroke="#4a535c" stroke-width=".7"/>
 <circle cx="${f1(x + w - 3)}" cy="${f1(y + h / 2)}" r="1.2" fill="${on ? "#43e07a" : "#55606a"}">${on && animate ? `<animate attributeName="opacity" values="1;.4;1" dur="2.2s" repeatCount="indefinite"/>` : ""}</circle></g>`;

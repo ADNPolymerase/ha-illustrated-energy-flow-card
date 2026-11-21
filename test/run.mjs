@@ -444,6 +444,52 @@ const draw = (config, states = base, lang = "en") => {
   check("form writes the microinverters", o.solar.microinverters, true);
 }
 
+// ── Microinverter per string, reserve from an entity, hiding idle consumers ──
+{
+  const ps = { solar: { microinverters: "string", strings: [{ name: "A", power_entity: "sensor.mppt2", panels: ["sensor.p1", "sensor.p2"] }, { name: "B", panels: ["sensor.p3"] }] } };
+  const m = Card.computeModel(hassOf(base), ps);
+  check("micro per string: read from the config", m.micro, "string");
+  check("micro per string: no central inverter", m.showInverter, false);
+  check("micro per string: no optimisers with it", m.optimizers, false);
+  const html = draw(ps);
+  check("micro per string: one box per string", (html.match(/class="ie-micro"/g) || []).length, 2);
+  check("micro per panel: one box per panel", (draw({ solar: { ...ps.solar, microinverters: true } }).match(/class="ie-micro"/g) || []).length, 3);
+  contains("micro per string: clicking it opens the string", html, 'data-entity="sensor.mppt2"');
+  const L = Card.computeLayout(m, ps);
+  check("micro per string: the box under the panels' bus", L.microY > L.bus, true);
+  check("editor: micro per string read back", Editor.toForm(ps).panel_device, "micro_string");
+  check("editor: micro per string written", Editor.fromForm({ ...Editor.toForm({}), panel_device: "micro_string", solar_power: "sensor.pv" }, {}).solar.microinverters, "string");
+
+  const bat = { battery: { power_entity: "sensor.bat", soc_entity: "sensor.soc", reserve: 10, reserve_entity: "number.reserve" } };
+  check("reserve: the entity wins over the value", Card.computeModel(hassOf({ ...base, "number.reserve": S(45, "%") }), bat).reserve, 45);
+  check("reserve: the value when the entity is unavailable", Card.computeModel(hassOf({ ...base, "number.reserve": { state: "unavailable", attributes: {} } }), bat).reserve, 10);
+  check("reserve: the value alone", Card.computeModel(hassOf(base), { battery: { power_entity: "sensor.bat", reserve: 20 } }).reserve, 20);
+  check("reserve: none given", Card.computeModel(hassOf(base), { battery: { power_entity: "sensor.bat" } }).reserve, null);
+  check("reserve: its entity watched", Card.computeWatched ? true : src.includes("add(b.reserve_entity)"), true);
+  contains("reserve: drawn at the entity's level", draw(bat, { ...base, "number.reserve": S(45, "%") }), 'class="bat-reserve"');
+  check("editor: reserve entity written", Editor.fromForm({ ...Editor.toForm({}), battery_power: "sensor.bat", battery_reserve_entity: "number.reserve" }, {}).battery.reserve_entity, "number.reserve");
+
+  const many = { consumers_hide_below: 10, consumers: ["sensor.ev", "sensor.plug", { entity: "sensor.p3", name: "Pump" }, { entity: "sensor.ups", children: ["sensor.p1", "sensor.plug"] }] };
+  const st = { ...base, "sensor.ups": S(4) };
+  const hm = Card.computeModel(hassOf(st), many);
+  check("hide: only the consumers at work", hm.consumers.map((k) => k.key).join(","), "c0,c2,c3");
+  check("hide: a consumer stays while one it feeds works", hm.consumers[2].children.map((k) => k.key).join(","), "c3-0");
+  check("hide: a consumer seen at work a moment ago stays", Card.computeModel(hassOf(st), many, new Set(["c1"])).consumers.map((k) => k.key).join(","), "c0,c1,c2,c3");
+  check("hide: unavailable leaves too", Card.computeModel(hassOf({ ...st, "sensor.ev": { state: "unavailable", attributes: {} } }), many).consumers.some((k) => k.key === "c0"), false);
+  check("hide: off by default", Card.computeModel(hassOf(st), { ...many, consumers_hide_below: "" }).consumers.length, 4);
+  check("hide: zero hides only the ones at 0 W", Card.computeModel(hassOf(st), { ...many, consumers_hide_below: 0 }).consumers.map((k) => k.key).join(","), "c0,c2,c3");
+  const card = new Card();
+  card.setConfig({ ...cfg, ...many });
+  card.hass = hassOf(st);
+  check("hide: hidden consumer not drawn", card._wrap.innerHTML.includes('data-entity="sensor.plug"'), false);
+  card.hass = hassOf({ ...st, "sensor.ev": S(2) });
+  check("hide: a consumer that just stopped stays a moment", card._wrap.innerHTML.includes('data-entity="sensor.ev"'), true);
+  clearTimeout(card._holdTimer);
+  check("editor: hide threshold written", Editor.fromForm({ ...Editor.toForm({}), consumers_hide_below: 15 }, {}).consumers_hide_below, 15);
+  check("editor: empty threshold stays out of the YAML", "consumers_hide_below" in Editor.fromForm({ ...Editor.toForm({}), consumers_hide_below: "" }, {}), false);
+  check("editor: threshold read back", Editor.toForm({ consumers_hide_below: 8 }).consumers_hide_below, 8);
+}
+
 // ── Stub config ──────────────────────────────────────────────────────────────
 {
   const stub = Card.getStubConfig(hassOf({ "sensor.grid_power": S(10), "sensor.solar_power": S(10), "sensor.battery_power": S(1), "sensor.battery_level": S(50, "%") }));

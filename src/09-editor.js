@@ -40,14 +40,15 @@ function ieToForm(cfg, counts) {
     rated_power: c.rated_power || IE_DEFAULTS.rated_power, panel_peak: c.panel_peak || IE_DEFAULTS.panel_peak,
     grid_power: g.power_entity || "", grid_invert: !!g.invert, grid_import: g.import_entity || "",
     grid_export: g.export_entity || "", grid_meter: g.meter || "box", grid_pylon: !!g.pylon, grid_name: g.name || "",
-    solar_power: s.power_entity || "", solar_view: s.view || "panel", panel_device: s.microinverters ? "micro" : s.optimizers ? "optim" : "none",
+    solar_power: s.power_entity || "", solar_view: s.view || "panel", panel_device: s.microinverters === "string" ? "micro_string" : s.microinverters ? "micro" : s.optimizers ? "optim" : "none",
     inverter: inv.show !== false, inverter_power: inv.power_entity || "",
     battery_power: b.power_entity || "", battery_invert: !!b.invert, battery_soc: b.soc_entity || "",
     battery_coupling: b.coupling === "inverter" ? "inverter" : "home",
-    battery_reserve: b.reserve === undefined || b.reserve === null ? "" : b.reserve, battery_name: b.name || "",
+    battery_reserve: b.reserve === undefined || b.reserve === null ? "" : b.reserve, battery_reserve_entity: b.reserve_entity || "", battery_name: b.name || "",
     home_power: h.power_entity || "", home_name: h.name || "",
     strings_count: n.strings, consumers_count: n.consumers,
     consumers_layout: IE_CONSUMER_LAYOUTS.includes(c.consumers_layout) ? c.consumers_layout : "auto",
+    consumers_hide_below: ieHideBelow(c) === null ? "" : ieHideBelow(c),
   };
   const strings = Array.isArray(s.strings) ? s.strings : [];
   for (let i = 0; i < IE_MAX_STRINGS; i++) {
@@ -80,6 +81,7 @@ function ieFromForm(d, prev) {
   // Defaults stay out of the YAML: only what differs is written.
   set(out, "language", d.language && d.language !== "auto" ? d.language : "");
   set(out, "flow_style", d.flow_style === "dashes" ? "dashes" : "");
+  set(out, "consumers_hide_below", d.consumers_hide_below === "" || d.consumers_hide_below === null || d.consumers_hide_below === undefined || !Number.isFinite(+d.consumers_hide_below) ? "" : Math.max(0, +d.consumers_hide_below));
   set(out, "consumers_layout", IE_CONSUMER_LAYOUTS.includes(d.consumers_layout) && d.consumers_layout !== "auto" ? d.consumers_layout : "");
   for (const k of ["animate", "dim_inactive", "clickable"]) set(out, k, d[k] === false ? false : "");
   set(out, "decimals", Number(d.decimals) > 0 ? Number(d.decimals) : "");
@@ -106,7 +108,7 @@ function ieFromForm(d, prev) {
   section("solar", (s) => {
     set(s, "power_entity", d.solar_power);
     if (d.solar_view && d.solar_view !== "panel") s.view = d.solar_view; else delete s.view;
-    if (d.panel_device === "micro") s.microinverters = true; else delete s.microinverters;
+    if (d.panel_device === "micro") s.microinverters = true; else if (d.panel_device === "micro_string") s.microinverters = "string"; else delete s.microinverters;
     if (d.panel_device === "optim") s.optimizers = true; else delete s.optimizers;
     const old = Array.isArray(s.strings) ? s.strings : [];
     const strings = [];
@@ -134,6 +136,7 @@ function ieFromForm(d, prev) {
     if (d.battery_invert) b.invert = true; else delete b.invert;
     if (d.battery_coupling === "inverter") b.coupling = "inverter"; else delete b.coupling;
     set(b, "reserve", d.battery_reserve === "" || d.battery_reserve === null || d.battery_reserve === undefined ? "" : Number(d.battery_reserve));
+    set(b, "reserve_entity", d.battery_reserve_entity);
     set(b, "name", d.battery_name);
     return b;
   });
@@ -179,6 +182,8 @@ function ieSchema(hass, lang, data) {
   const t = (k, v) => ieT(lang, k, v);
   const power = ieUnitList(hass, ["W", "kW", "MW"]);
   const pct = ieUnitList(hass, ["%"]);
+  const st = (hass && hass.states) || {};
+  const pctSet = Object.keys(st).filter((id) => /^(sensor|number|input_number)\./.test(id) && String((st[id].attributes || {}).unit_of_measurement || "") === "%").sort();
   const ent = (name, list, label, multiple) => ({ name, label, selector: { entity: { include_entities: list, ...(multiple ? { multiple: true } : {}) } } });
   const txt = (name, label) => ({ name, label, selector: { text: {} } });
   const bool = (name, label) => ({ name, label, selector: { boolean: {} } });
@@ -242,7 +247,7 @@ function ieSchema(hass, lang, data) {
         num("panel_peak", t("e_panel_peak"), 50, 1000, 5),
       ]),
       ent("solar_power", power, t("e_solar_power")),
-      sel("panel_device", t("e_panel_device"), [{ value: "none", label: t("e_pd_none") }, { value: "micro", label: t("e_pd_micro") }, { value: "optim", label: t("e_pd_optim") }]),
+      sel("panel_device", t("e_panel_device"), [{ value: "none", label: t("e_pd_none") }, { value: "micro", label: t("e_pd_micro") }, { value: "micro_string", label: t("e_pd_micro_string") }, { value: "optim", label: t("e_pd_optim") }]),
       grid2([bool("inverter", t("e_inverter")), ent("inverter_power", power, t("e_inverter_power"))]),
       num("strings_count", t("e_strings_count"), 0, IE_MAX_STRINGS, 1),
       ...strings,
@@ -253,6 +258,7 @@ function ieSchema(hass, lang, data) {
         sel("battery_coupling", t("e_coupling"), [{ value: "home", label: t("e_coupling_home") }, { value: "inverter", label: t("e_coupling_inverter") }]),
         num("battery_reserve", t("e_battery_reserve"), 0, 100, 1),
       ]),
+      ent("battery_reserve_entity", pctSet, t("e_battery_reserve_entity")),
       grid2([bool("battery_invert", t("e_invert")), txt("battery_name", t("e_name"))]),
     ]),
     exp(t("e_home"), [grid2([ent("home_power", power, t("e_home_power")), txt("home_name", t("e_name"))])]),
@@ -261,6 +267,7 @@ function ieSchema(hass, lang, data) {
         num("consumers_count", t("e_consumers_count"), 0, IE_MAX_CONSUMERS, 1),
         sel("consumers_layout", t("e_layout"), IE_CONSUMER_LAYOUTS.map((v) => ({ value: v, label: t(`e_layout_${v}`) }))),
       ]),
+      num("consumers_hide_below", t("e_hide_below"), 0, 5000, 1),
       ...consumers,
     ]),
   ];

@@ -60,14 +60,16 @@ function ieLayout(model, cfg) {
     const py = 40;
     L.pw = pw; L.ph = ph; L.py = py;
     // Microinverters or optimisers hang under their panels, the bus under them.
-    L.microY = py + ph + 5;
-    L.bus = py + ph + (L.micro || L.optimizers ? 30 : 16);
+    // One per string: the panels' bus first, the box under its middle.
+    L.perString = model.micro === "string";
+    L.microY = L.perString ? py + ph + 18 : py + ph + 5;
+    L.bus = py + ph + (L.perString ? 12 : L.micro || L.optimizers ? 30 : 16);
     groups.forEach((g, i) => {
       const gw = groupW(g);
       L.groups.push({ ...g, x, width: gw, cx: x + gw / 2 });
       x += gw + (gaps[i] || 0);
     });
-    solarBottom = view === "panel" || L.micro || L.optimizers ? L.bus : py + ph;
+    solarBottom = L.perString ? L.microY + 12 : view === "panel" || L.micro || L.optimizers ? L.bus : py + ph;
   }
 
   const showInverter = model.showInverter && L.groups.length > 0;
@@ -153,7 +155,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     return cfg;
   }
 
-  static computeModel(hass, cfg) { return ieModel(hass, cfg); }
+  static computeModel(hass, cfg, recent) { return ieModel(hass, cfg, recent); }
   static computeLayout(model, cfg) { return ieLayout(model, cfg); }
 
   setConfig(config) {
@@ -188,6 +190,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
 
   disconnectedCallback() {
     if (this._ro) this._ro.disconnect();
+    clearTimeout(this._holdTimer);
   }
 
   _signature() {
@@ -293,6 +296,33 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     this._wrap.style.height = `${Math.ceil(this._layoutH * k) + 12}px`;
   }
 
+  // With consumers_hide_below, a consumer stays on the card IE_HIDE_HOLD
+  // after its last reading at work, then leaves at the next redraw (a timer
+  // forces one when nothing else moves).
+  _recentConsumers(hass, c) {
+    const below = ieHideBelow(c);
+    if (below === null) return null;
+    this._seen = this._seen || new Map();
+    const now = Date.now();
+    const look = (x, key) => {
+      const w = ieWatts(hass, ieEntityOf(x));
+      if (w !== null && w > below) this._seen.set(key, now);
+    };
+    (Array.isArray(c.consumers) ? c.consumers : []).forEach((x, i) => {
+      look(x, `c${i}`);
+      ((x && x.children) || []).forEach((k, j) => look(k, `c${i}-${j}`));
+    });
+    const recent = new Set();
+    let next = Infinity;
+    for (const [key, at] of this._seen) {
+      const left = at + IE_HIDE_HOLD - now;
+      if (left > 0) { recent.add(key); next = Math.min(next, left); }
+    }
+    clearTimeout(this._holdTimer);
+    if (next !== Infinity) this._holdTimer = setTimeout(() => { this._sig = null; if (this._hass) this._render(); }, next + 200);
+    return recent;
+  }
+
   _render() {
     if (!this._built) this._build();
     const c = this._config;
@@ -313,7 +343,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     if (c.title) this._card.setAttribute("header", c.title);
     else this._card.removeAttribute("header");
 
-    const m = ieModel(hass, c);
+    const m = ieModel(hass, c, this._recentConsumers(hass, c));
     const L = ieLayout(m, c);
     this._layoutH = L.height;
     this._layoutW = L.width;
@@ -343,15 +373,24 @@ class IllustratedEnergyFlowCard extends HTMLElement {
         if (p && p.name) svg += `<title>${esc(p.name)} · ${esc(fmt(p.w))}</title>`;
         svg += `</g>`;
         const pcx = px + L.pw / 2;
-        if (L.micro || L.optimizers) {
+        if (L.perString) {
+          if (L.view === "panel" && p) svg += ieFlow(ieLine(pcx, L.py + L.ph + 2, pcx, L.bus), p.w, IE_COLORS.solar, peak, { ...fo, gap: 9 });
+          else svg += `<path class="ie-track" d="M${f1(pcx)} ${f1(L.py + L.ph + 2)} V${f1(L.bus)}"/>`;
+        } else if (L.micro || L.optimizers) {
           svg += `<g${p ? hit(p.entity) : ""}>${ieMicro(pcx, L.microY, pwatts !== null && pwatts > 1, animate, L.optimizers)}</g>`;
           if (L.view === "panel" && p) svg += ieFlow(ieLine(pcx, L.microY + 11, pcx, L.bus), p.w, IE_COLORS.solar, peak, { ...fo, gap: 9 });
           else svg += `<path class="ie-track" d="M${f1(pcx)} ${f1(L.microY + 11)} V${f1(L.bus)}"/>`;
         } else if (L.view === "panel" && p) svg += ieFlow(ieLine(pcx, L.py + L.ph + 2, pcx, L.bus), p.w, IE_COLORS.solar, peak, { ...fo, gap: 9 });
       }
       const onBus = L.micro || L.optimizers || (L.view === "panel" && !g.decorative);
-      const fromY = onBus ? L.bus : L.py + L.ph + 3;
+      let fromY = onBus ? L.bus : L.py + L.ph + 3;
       if (onBus && g.drawn > 1) svg += `<path class="ie-bus" d="M${f1(g.x + L.pw / 2)} ${f1(L.bus)} H${f1(g.x + g.width - L.pw / 2)}"/>`;
+      if (L.perString) {
+        // The string's microinverter, fed by the bus, its output going on.
+        svg += `<path class="ie-track" d="M${f1(g.cx)} ${f1(L.bus)} V${f1(L.microY)}"/>`;
+        svg += `<g${hit(g.entity)}>${ieMicro(g.cx, L.microY, g.w !== null && g.w > 1, animate, false, Math.max(18, Math.min(30, g.width - 4)))}</g>`;
+        fromY = L.microY + 11;
+      }
       const mx = L.inv ? (G === 1 ? L.inv.x : L.inv.x - 18 + (36 * gi) / (G - 1)) : L.house.x;
       const spec = ieCubic(g.cx, fromY, g.cx, fromY + 40, mx, invTop - 40, mx, invTop - 4);
       svg += ieFlow(spec, g.w, IE_COLORS.solar, peak * Math.max(1, g.drawn), fo);
@@ -438,7 +477,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     if (L.battery) {
       const b = c.battery || {};
       const mode = m.bat === null && m.soc === null ? "unav" : m.bat !== null && m.bat < -1 ? "charging" : m.bat !== null && m.bat > 1 ? "discharging" : m.soc !== null && m.soc >= 99 ? "full" : "idle";
-      const reserve = Number.isFinite(+b.reserve) && b.reserve !== "" && b.reserve !== null ? +b.reserve : null;
+      const reserve = m.reserve;
       const html = D.bat.draw("", { battery: { layout: "wall", level: m.soc, reserve, mode, low: m.soc !== null && reserve !== null && m.soc <= reserve } });
       const state = mode === "charging" ? t("charging") : mode === "discharging" ? t("discharging") : mode === "unav" ? t("unavailable") : t("idle");
       const sub = m.soc !== null ? `${Math.round(m.soc)} % · ${state}` : state;
@@ -462,8 +501,8 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     };
     L.consumers.forEach((p, i) => {
       const cm = m.consumers[i];
-      nodes += consumerNode(p, cm, `c${i}`);
-      p.children.forEach((q, j) => { nodes += consumerNode(q, cm.children[j], `c${i}-${j}`); });
+      nodes += consumerNode(p, cm, cm.key);
+      p.children.forEach((q, j) => { nodes += consumerNode(q, cm.children[j], cm.children[j].key); });
     });
     if (!acReady && m.consumers.some((k) => k.type !== "generic" || k.children.some((x) => x.type !== "generic")) && !this._acWait && typeof customElements !== "undefined" && customElements.whenDefined) {
       this._acWait = true;

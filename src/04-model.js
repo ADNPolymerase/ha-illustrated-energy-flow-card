@@ -5,7 +5,7 @@
 //   grid    + import from the grid, - export to it
 //   battery + discharge to the home, - charge from it
 
-function ieModel(hass, cfg) {
+function ieModel(hass, cfg, recent) {
   const c = cfg || {};
   const solarCfg = c.solar || {};
   const strings = (Array.isArray(solarCfg.strings) ? solarCfg.strings : []).map((s, i) => {
@@ -27,6 +27,9 @@ function ieModel(hass, cfg) {
 
   const inv = c.inverter || {};
   const showInverter = hasSolar && inv.show !== false && !solarCfg.microinverters;
+  // One microinverter per panel (true), or one per string ("string"): the
+  // dual and quad ones (APsystems DS3, Hoymiles HM-800) take two or four.
+  const micro = solarCfg.microinverters === "string" ? "string" : solarCfg.microinverters ? "panel" : "";
   let invOut = inv.power_entity ? ieWatts(hass, inv.power_entity) : pv;
   if (invOut !== null && invOut < 0) invOut = 0;
 
@@ -50,16 +53,28 @@ function ieModel(hass, cfg) {
   let bat = b.power_entity ? ieWatts(hass, b.power_entity) : null;
   if (bat !== null && b.invert) bat = -bat;
   const soc = b.soc_entity ? ieNum(hass, b.soc_entity) : null;
+  // The reserve: a sensor or a number entity when given, else the fixed value.
+  let reserve = b.reserve_entity ? ieNum(hass, b.reserve_entity) : null;
+  if (reserve === null && b.reserve !== "" && b.reserve !== null && b.reserve !== undefined && Number.isFinite(+b.reserve)) reserve = +b.reserve;
 
   // A consumer may feed others (a UPS feeding the router and a mini PC): its
   // children hang from it, one level deep.
-  const consumerOf = (x, depth) => {
+  const consumerOf = (x, key) => {
     const entity = ieEntityOf(x);
     const type = x && typeof x.type === "string" && /^[a-z0-9_]+$/.test(x.type) ? x.type : "generic";
-    const kids = depth === 0 && x && Array.isArray(x.children) ? x.children.filter((k) => ieEntityOf(k)).map((k) => consumerOf(k, 1)) : [];
-    return { entity, name: ieNameOf(x), type, w: ieWatts(hass, entity), appliance: x && typeof x.appliance === "object" ? x.appliance : null, children: kids };
+    const kids = !key.includes("-") && x && Array.isArray(x.children) ? x.children.map((k, j) => [k, j]).filter(([k]) => ieEntityOf(k)).map(([k, j]) => consumerOf(k, `${key}-${j}`)) : [];
+    return { entity, key, name: ieNameOf(x), type, w: ieWatts(hass, entity), appliance: x && typeof x.appliance === "object" ? x.appliance : null, children: kids };
   };
-  const consumers = (Array.isArray(c.consumers) ? c.consumers : []).filter((x) => ieEntityOf(x)).map((x) => consumerOf(x, 0));
+  let consumers = (Array.isArray(c.consumers) ? c.consumers : []).map((x, i) => [x, i]).filter(([x]) => ieEntityOf(x)).map(([x, i]) => consumerOf(x, `c${i}`));
+  // Only the consumers at work, when asked: below the threshold (or
+  // unavailable) they leave the card, unless they were at work a moment ago
+  // (the card passes those in recent, so a consumer on the edge does not
+  // come and go with every reading). A consumer stays while one it feeds works.
+  const below = ieHideBelow(c);
+  if (below !== null) {
+    const working = (k) => (k.w !== null && k.w > below) || (recent && recent.has(k.key));
+    consumers = consumers.map((k) => ({ ...k, children: k.children.filter(working) })).filter((k) => working(k) || k.children.length);
+  }
 
   // The home: its own sensor when given, otherwise what comes in.
   const h = c.home || {};
@@ -74,7 +89,13 @@ function ieModel(hass, cfg) {
     }
   }
 
-  return { strings, hasSolar, pv, showInverter, invOut, hasGrid, grid, hasBattery, batteryOnInverter, bat, soc, consumers, home, homeComputed, micro: !!solarCfg.microinverters, optimizers: !solarCfg.microinverters && !!solarCfg.optimizers };
+  return { strings, hasSolar, pv, showInverter, invOut, hasGrid, grid, hasBattery, batteryOnInverter, bat, soc, reserve, consumers, home, homeComputed, micro, optimizers: !micro && !!solarCfg.optimizers };
+}
+
+// The power under which consumers are hidden, or null to show them all.
+function ieHideBelow(c) {
+  const v = c && c.consumers_hide_below;
+  return v === "" || v === null || v === undefined || !Number.isFinite(+v) ? null : Math.max(0, +v);
 }
 
 // Every entity the card reads: the card only redraws when one of them moves.
@@ -92,7 +113,7 @@ function ieWatched(cfg) {
   const g = c.grid || {};
   add(g.power_entity); add(g.import_entity); add(g.export_entity);
   const b = c.battery || {};
-  add(b.power_entity); add(b.soc_entity);
+  add(b.power_entity); add(b.soc_entity); add(b.reserve_entity);
   add((c.home || {}).power_entity);
   for (const x of c.consumers || []) {
     add(ieEntityOf(x));

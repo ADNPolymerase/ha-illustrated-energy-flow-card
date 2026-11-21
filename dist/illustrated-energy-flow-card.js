@@ -48,6 +48,7 @@ const IE_MAX_CONSUMERS = 12;
 const IE_ONOFF_TYPES = ["drying_rack"];
 // A consumer drawing more than this is on (W).
 const IE_ON_W = 5;
+const IE_HIDE_HOLD = 120000;
 // The box a HA Appliance Card drawing sits in.
 const IE_AC_W = 130;
 const IE_AC_H = 108;
@@ -80,7 +81,7 @@ const IE_I18N = {
     e_home: "Home", e_home_power: "Home power (optional, computed otherwise)",
     e_consumer: "Consumer {n}", e_entity: "Power sensor", e_type: "Drawing",
     washer: "Washing machine", dryer: "Dryer", dishwasher: "Dishwasher", fridge: "Fridge", oven: "Oven", cooktop: "Cooktop", microwave: "Microwave", kettle: "Kettle", coffee: "Coffee machine", printer_3d: "3D printer", screen: "Screen", network: "Network", ups: "UPS", air_conditioner: "Air conditioner", space_heater: "Heater", dehumidifier: "Dehumidifier", pool_pump: "Pool pump", spa: "Spa", robot: "Robot", lamp: "Lamp", e_strings_count: "Number of strings", e_consumers: "Consumers", e_consumers_count: "Number of consumers", e_fed_by: "Fed by", e_none: "The home", e_pylon: "Draw the grid pylon", e_coupling: "Battery connected to", e_coupling_home: "The home (AC)", e_coupling_inverter: "The inverter (DC, hybrid)", e_appliance: "HA Appliance Card options (YAML)", e_layout: "Layout", e_layout_auto: "Automatic", e_layout_column: "One column", e_layout_columns: "Two columns", e_layout_compact: "Compact",
-    e_panel_device: "Electronics under each panel", e_pd_none: "None", e_pd_micro: "Microinverters (no central inverter)", e_pd_optim: "Optimisers (with the inverter)",
+    e_panel_device: "Electronics under each panel", e_pd_none: "None", e_pd_micro: "Microinverters (no central inverter)", e_pd_optim: "Optimisers (with the inverter)", e_pd_micro_string: "One microinverter per string (2 or 4 panels)", e_battery_reserve_entity: "Reserve from an entity (replaces the value)", e_hide_below: "Hide consumers below (W, empty = show all)",
     auto: "Automatic",
   },
   fr: {
@@ -106,7 +107,7 @@ const IE_I18N = {
     e_home: "Maison", e_home_power: "Puissance de la maison (facultatif, calculée sinon)",
     e_consumer: "Consommateur {n}", e_entity: "Capteur de puissance", e_type: "Dessin",
     washer: "Lave-linge", dryer: "Sèche-linge", dishwasher: "Lave-vaisselle", fridge: "Réfrigérateur", oven: "Four", cooktop: "Plaque de cuisson", microwave: "Micro-ondes", kettle: "Bouilloire", coffee: "Machine à café", printer_3d: "Imprimante 3D", screen: "Écran", network: "Réseau informatique", ups: "Onduleur de secours", air_conditioner: "Climatiseur", space_heater: "Radiateur", dehumidifier: "Déshumidificateur", pool_pump: "Pompe de piscine", spa: "Spa", robot: "Robot", lamp: "Lampe", e_strings_count: "Nombre de strings", e_consumers: "Consommateurs", e_consumers_count: "Nombre de consommateurs", e_fed_by: "Alimenté par", e_none: "La maison", e_pylon: "Dessiner le pylône du réseau", e_coupling: "Batterie reliée à", e_coupling_home: "La maison (AC)", e_coupling_inverter: "L'onduleur (DC, hybride)", e_appliance: "Options HA Appliance Card (YAML)", e_layout: "Disposition", e_layout_auto: "Automatique", e_layout_column: "Une colonne", e_layout_columns: "Deux colonnes", e_layout_compact: "Compacte",
-    e_panel_device: "Électronique sous chaque panneau", e_pd_none: "Aucune", e_pd_micro: "Micro-onduleurs (pas d'onduleur central)", e_pd_optim: "Optimiseurs (avec l'onduleur)",
+    e_panel_device: "Électronique sous chaque panneau", e_pd_none: "Aucune", e_pd_micro: "Micro-onduleurs (pas d'onduleur central)", e_pd_optim: "Optimiseurs (avec l'onduleur)", e_pd_micro_string: "Un micro-onduleur par string (2 ou 4 panneaux)", e_battery_reserve_entity: "Réserve lue sur une entité (remplace la valeur)", e_hide_below: "Masquer les consommateurs sous (W, vide = tous)",
     auto: "Automatique",
   },
   de: {
@@ -132,7 +133,7 @@ const IE_I18N = {
     e_home: "Haus", e_home_power: "Hausverbrauch (optional, sonst berechnet)",
     e_consumer: "Verbraucher {n}", e_entity: "Leistungssensor", e_type: "Zeichnung",
     washer: "Waschmaschine", dryer: "Trockner", dishwasher: "Geschirrspüler", fridge: "Kühlschrank", oven: "Backofen", cooktop: "Kochfeld", microwave: "Mikrowelle", kettle: "Wasserkocher", coffee: "Kaffeemaschine", printer_3d: "3D-Drucker", screen: "Bildschirm", network: "Netzwerk", ups: "USV", air_conditioner: "Klimaanlage", space_heater: "Heizlüfter", dehumidifier: "Luftentfeuchter", pool_pump: "Poolpumpe", spa: "Whirlpool", robot: "Roboter", lamp: "Lampe", e_strings_count: "Anzahl der Strings", e_consumers: "Verbraucher", e_consumers_count: "Anzahl der Verbraucher", e_fed_by: "Versorgt von", e_none: "Dem Haus", e_pylon: "Strommast zeichnen", e_coupling: "Batterie verbunden mit", e_coupling_home: "Dem Haus (AC)", e_coupling_inverter: "Dem Wechselrichter (DC, Hybrid)", e_appliance: "Optionen der HA Appliance Card (YAML)", e_layout: "Anordnung", e_layout_auto: "Automatisch", e_layout_column: "Eine Spalte", e_layout_columns: "Zwei Spalten", e_layout_compact: "Kompakt",
-    e_panel_device: "Elektronik unter jedem Modul", e_pd_none: "Keine", e_pd_micro: "Mikrowechselrichter (ohne zentralen Wechselrichter)", e_pd_optim: "Optimierer (mit Wechselrichter)",
+    e_panel_device: "Elektronik unter jedem Modul", e_pd_none: "Keine", e_pd_micro: "Mikrowechselrichter (ohne zentralen Wechselrichter)", e_pd_optim: "Optimierer (mit Wechselrichter)", e_pd_micro_string: "Ein Mikrowechselrichter pro String (2 oder 4 Module)", e_battery_reserve_entity: "Reserve aus einer Entität (ersetzt den Wert)", e_hide_below: "Verbraucher ausblenden unter (W, leer = alle)",
     auto: "Automatisch",
   },
   es: {
@@ -158,7 +159,7 @@ const IE_I18N = {
     e_home: "Casa", e_home_power: "Potencia de la casa (opcional, calculada si no)",
     e_consumer: "Consumidor {n}", e_entity: "Sensor de potencia", e_type: "Dibujo",
     washer: "Lavadora", dryer: "Secadora", dishwasher: "Lavavajillas", fridge: "Frigorífico", oven: "Horno", cooktop: "Placa de cocina", microwave: "Microondas", kettle: "Hervidor", coffee: "Cafetera", printer_3d: "Impresora 3D", screen: "Pantalla", network: "Red informática", ups: "SAI", air_conditioner: "Aire acondicionado", space_heater: "Calefactor", dehumidifier: "Deshumidificador", pool_pump: "Bomba de piscina", spa: "Spa", robot: "Robot", lamp: "Lámpara", e_strings_count: "Número de strings", e_consumers: "Consumidores", e_consumers_count: "Número de consumidores", e_fed_by: "Alimentado por", e_none: "La casa", e_pylon: "Dibujar la torre eléctrica", e_coupling: "Batería conectada a", e_coupling_home: "La casa (CA)", e_coupling_inverter: "El inversor (CC, híbrido)", e_appliance: "Opciones de HA Appliance Card (YAML)", e_layout: "Disposición", e_layout_auto: "Automática", e_layout_column: "Una columna", e_layout_columns: "Dos columnas", e_layout_compact: "Compacta",
-    e_panel_device: "Electrónica bajo cada panel", e_pd_none: "Ninguna", e_pd_micro: "Microinversores (sin inversor central)", e_pd_optim: "Optimizadores (con el inversor)",
+    e_panel_device: "Electrónica bajo cada panel", e_pd_none: "Ninguna", e_pd_micro: "Microinversores (sin inversor central)", e_pd_optim: "Optimizadores (con el inversor)", e_pd_micro_string: "Un microinversor por string (2 o 4 paneles)", e_battery_reserve_entity: "Reserva desde una entidad (sustituye el valor)", e_hide_below: "Ocultar consumidores por debajo de (W, vacío = todos)",
     auto: "Automático",
   },
   it: {
@@ -184,7 +185,7 @@ const IE_I18N = {
     e_home: "Casa", e_home_power: "Potenza della casa (facoltativa, altrimenti calcolata)",
     e_consumer: "Utenza {n}", e_entity: "Sensore di potenza", e_type: "Disegno",
     washer: "Lavatrice", dryer: "Asciugatrice", dishwasher: "Lavastoviglie", fridge: "Frigorifero", oven: "Forno", cooktop: "Piano cottura", microwave: "Microonde", kettle: "Bollitore", coffee: "Macchina da caffè", printer_3d: "Stampante 3D", screen: "Schermo", network: "Rete informatica", ups: "UPS", air_conditioner: "Condizionatore", space_heater: "Stufetta", dehumidifier: "Deumidificatore", pool_pump: "Pompa della piscina", spa: "Spa", robot: "Robot", lamp: "Lampada", e_strings_count: "Numero di stringhe", e_consumers: "Utenze", e_consumers_count: "Numero di utenze", e_fed_by: "Alimentato da", e_none: "La casa", e_pylon: "Disegnare il traliccio", e_coupling: "Batteria collegata a", e_coupling_home: "La casa (CA)", e_coupling_inverter: "L'inverter (CC, ibrido)", e_appliance: "Opzioni di HA Appliance Card (YAML)", e_layout: "Disposizione", e_layout_auto: "Automatica", e_layout_column: "Una colonna", e_layout_columns: "Due colonne", e_layout_compact: "Compatta",
-    e_panel_device: "Elettronica sotto ogni pannello", e_pd_none: "Nessuna", e_pd_micro: "Microinverter (senza inverter centrale)", e_pd_optim: "Ottimizzatori (con l'inverter)",
+    e_panel_device: "Elettronica sotto ogni pannello", e_pd_none: "Nessuna", e_pd_micro: "Microinverter (senza inverter centrale)", e_pd_optim: "Ottimizzatori (con l'inverter)", e_pd_micro_string: "Un microinverter per stringa (2 o 4 pannelli)", e_battery_reserve_entity: "Riserva da un'entità (sostituisce il valore)", e_hide_below: "Nascondi le utenze sotto (W, vuoto = tutte)",
     auto: "Automatico",
   },
   nl: {
@@ -210,7 +211,7 @@ const IE_I18N = {
     e_home: "Huis", e_home_power: "Huisverbruik (optioneel, anders berekend)",
     e_consumer: "Verbruiker {n}", e_entity: "Vermogenssensor", e_type: "Tekening",
     washer: "Wasmachine", dryer: "Droger", dishwasher: "Vaatwasser", fridge: "Koelkast", oven: "Oven", cooktop: "Kookplaat", microwave: "Magnetron", kettle: "Waterkoker", coffee: "Koffiezetapparaat", printer_3d: "3D-printer", screen: "Scherm", network: "Netwerk", ups: "UPS", air_conditioner: "Airco", space_heater: "Kachel", dehumidifier: "Ontvochtiger", pool_pump: "Zwembadpomp", spa: "Spa", robot: "Robot", lamp: "Lamp", e_strings_count: "Aantal strings", e_consumers: "Verbruikers", e_consumers_count: "Aantal verbruikers", e_fed_by: "Gevoed door", e_none: "Het huis", e_pylon: "Hoogspanningsmast tekenen", e_coupling: "Batterij verbonden met", e_coupling_home: "Het huis (AC)", e_coupling_inverter: "De omvormer (DC, hybride)", e_appliance: "Opties van HA Appliance Card (YAML)", e_layout: "Indeling", e_layout_auto: "Automatisch", e_layout_column: "Eén kolom", e_layout_columns: "Twee kolommen", e_layout_compact: "Compact",
-    e_panel_device: "Elektronica onder elk paneel", e_pd_none: "Geen", e_pd_micro: "Micro-omvormers (geen centrale omvormer)", e_pd_optim: "Optimizers (met de omvormer)",
+    e_panel_device: "Elektronica onder elk paneel", e_pd_none: "Geen", e_pd_micro: "Micro-omvormers (geen centrale omvormer)", e_pd_optim: "Optimizers (met de omvormer)", e_pd_micro_string: "Eén micro-omvormer per string (2 of 4 panelen)", e_battery_reserve_entity: "Reserve uit een entiteit (vervangt de waarde)", e_hide_below: "Verbruikers verbergen onder (W, leeg = alle)",
     auto: "Automatisch",
   },
 };
@@ -386,7 +387,7 @@ function ieFlow(spec, watts, color, ceiling, opts) {
 //   grid    + import from the grid, - export to it
 //   battery + discharge to the home, - charge from it
 
-function ieModel(hass, cfg) {
+function ieModel(hass, cfg, recent) {
   const c = cfg || {};
   const solarCfg = c.solar || {};
   const strings = (Array.isArray(solarCfg.strings) ? solarCfg.strings : []).map((s, i) => {
@@ -408,6 +409,9 @@ function ieModel(hass, cfg) {
 
   const inv = c.inverter || {};
   const showInverter = hasSolar && inv.show !== false && !solarCfg.microinverters;
+  // One microinverter per panel (true), or one per string ("string"): the
+  // dual and quad ones (APsystems DS3, Hoymiles HM-800) take two or four.
+  const micro = solarCfg.microinverters === "string" ? "string" : solarCfg.microinverters ? "panel" : "";
   let invOut = inv.power_entity ? ieWatts(hass, inv.power_entity) : pv;
   if (invOut !== null && invOut < 0) invOut = 0;
 
@@ -431,16 +435,28 @@ function ieModel(hass, cfg) {
   let bat = b.power_entity ? ieWatts(hass, b.power_entity) : null;
   if (bat !== null && b.invert) bat = -bat;
   const soc = b.soc_entity ? ieNum(hass, b.soc_entity) : null;
+  // The reserve: a sensor or a number entity when given, else the fixed value.
+  let reserve = b.reserve_entity ? ieNum(hass, b.reserve_entity) : null;
+  if (reserve === null && b.reserve !== "" && b.reserve !== null && b.reserve !== undefined && Number.isFinite(+b.reserve)) reserve = +b.reserve;
 
   // A consumer may feed others (a UPS feeding the router and a mini PC): its
   // children hang from it, one level deep.
-  const consumerOf = (x, depth) => {
+  const consumerOf = (x, key) => {
     const entity = ieEntityOf(x);
     const type = x && typeof x.type === "string" && /^[a-z0-9_]+$/.test(x.type) ? x.type : "generic";
-    const kids = depth === 0 && x && Array.isArray(x.children) ? x.children.filter((k) => ieEntityOf(k)).map((k) => consumerOf(k, 1)) : [];
-    return { entity, name: ieNameOf(x), type, w: ieWatts(hass, entity), appliance: x && typeof x.appliance === "object" ? x.appliance : null, children: kids };
+    const kids = !key.includes("-") && x && Array.isArray(x.children) ? x.children.map((k, j) => [k, j]).filter(([k]) => ieEntityOf(k)).map(([k, j]) => consumerOf(k, `${key}-${j}`)) : [];
+    return { entity, key, name: ieNameOf(x), type, w: ieWatts(hass, entity), appliance: x && typeof x.appliance === "object" ? x.appliance : null, children: kids };
   };
-  const consumers = (Array.isArray(c.consumers) ? c.consumers : []).filter((x) => ieEntityOf(x)).map((x) => consumerOf(x, 0));
+  let consumers = (Array.isArray(c.consumers) ? c.consumers : []).map((x, i) => [x, i]).filter(([x]) => ieEntityOf(x)).map(([x, i]) => consumerOf(x, `c${i}`));
+  // Only the consumers at work, when asked: below the threshold (or
+  // unavailable) they leave the card, unless they were at work a moment ago
+  // (the card passes those in recent, so a consumer on the edge does not
+  // come and go with every reading). A consumer stays while one it feeds works.
+  const below = ieHideBelow(c);
+  if (below !== null) {
+    const working = (k) => (k.w !== null && k.w > below) || (recent && recent.has(k.key));
+    consumers = consumers.map((k) => ({ ...k, children: k.children.filter(working) })).filter((k) => working(k) || k.children.length);
+  }
 
   // The home: its own sensor when given, otherwise what comes in.
   const h = c.home || {};
@@ -455,7 +471,13 @@ function ieModel(hass, cfg) {
     }
   }
 
-  return { strings, hasSolar, pv, showInverter, invOut, hasGrid, grid, hasBattery, batteryOnInverter, bat, soc, consumers, home, homeComputed, micro: !!solarCfg.microinverters, optimizers: !solarCfg.microinverters && !!solarCfg.optimizers };
+  return { strings, hasSolar, pv, showInverter, invOut, hasGrid, grid, hasBattery, batteryOnInverter, bat, soc, reserve, consumers, home, homeComputed, micro, optimizers: !micro && !!solarCfg.optimizers };
+}
+
+// The power under which consumers are hidden, or null to show them all.
+function ieHideBelow(c) {
+  const v = c && c.consumers_hide_below;
+  return v === "" || v === null || v === undefined || !Number.isFinite(+v) ? null : Math.max(0, +v);
 }
 
 // Every entity the card reads: the card only redraws when one of them moves.
@@ -473,7 +495,7 @@ function ieWatched(cfg) {
   const g = c.grid || {};
   add(g.power_entity); add(g.import_entity); add(g.export_entity);
   const b = c.battery || {};
-  add(b.power_entity); add(b.soc_entity);
+  add(b.power_entity); add(b.soc_entity); add(b.reserve_entity);
   add((c.home || {}).power_entity);
   for (const x of c.consumers || []) {
     add(ieEntityOf(x));
@@ -615,12 +637,12 @@ ${tree(14, 0.9)}${tree(22, 0.65)}${tree(82, 0.8)}
 // status LED and the AC cable leaving it. One per panel, as Enphase, Hoymiles
 // or APsystems fit them. An optimiser (Tigo, SolarEdge) is the same small box,
 // narrower and without a LED, the central inverter doing the rest.
-function ieMicro(cx, y, on, animate, optimizer) {
+function ieMicro(cx, y, on, animate, optimizer, width) {
   if (optimizer) {
     const w = 14, h = 9, x = cx - w / 2;
     return `<g class="ie-optim"><rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="1.6" fill="#3a4148" stroke="#1b2025" stroke-width=".6"/><path d="M${f1(x + 3)} ${f1(y + 4.5)} H${f1(x + w - 3)}" stroke="#596370" stroke-width=".8"/></g>`;
   }
-  const w = 18, h = 10, x = cx - w / 2;
+  const w = width || 18, h = 10, x = cx - w / 2;
   return `<g class="ie-micro"><rect x="${f1(x)}" y="${f1(y)}" width="${w}" height="${h}" rx="2" fill="#2e353c" stroke="#1b2025" stroke-width=".6"/>
 <path d="M${f1(x + 3)} ${f1(y + 3)} H${f1(x + w - 6)} M${f1(x + 3)} ${f1(y + 5)} H${f1(x + w - 6)} M${f1(x + 3)} ${f1(y + 7)} H${f1(x + w - 6)}" stroke="#4a535c" stroke-width=".7"/>
 <circle cx="${f1(x + w - 3)}" cy="${f1(y + h / 2)}" r="1.2" fill="${on ? "#43e07a" : "#55606a"}">${on && animate ? `<animate attributeName="opacity" values="1;.4;1" dur="2.2s" repeatCount="indefinite"/>` : ""}</circle></g>`;
@@ -1472,14 +1494,16 @@ function ieLayout(model, cfg) {
     const py = 40;
     L.pw = pw; L.ph = ph; L.py = py;
     // Microinverters or optimisers hang under their panels, the bus under them.
-    L.microY = py + ph + 5;
-    L.bus = py + ph + (L.micro || L.optimizers ? 30 : 16);
+    // One per string: the panels' bus first, the box under its middle.
+    L.perString = model.micro === "string";
+    L.microY = L.perString ? py + ph + 18 : py + ph + 5;
+    L.bus = py + ph + (L.perString ? 12 : L.micro || L.optimizers ? 30 : 16);
     groups.forEach((g, i) => {
       const gw = groupW(g);
       L.groups.push({ ...g, x, width: gw, cx: x + gw / 2 });
       x += gw + (gaps[i] || 0);
     });
-    solarBottom = view === "panel" || L.micro || L.optimizers ? L.bus : py + ph;
+    solarBottom = L.perString ? L.microY + 12 : view === "panel" || L.micro || L.optimizers ? L.bus : py + ph;
   }
 
   const showInverter = model.showInverter && L.groups.length > 0;
@@ -1565,7 +1589,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     return cfg;
   }
 
-  static computeModel(hass, cfg) { return ieModel(hass, cfg); }
+  static computeModel(hass, cfg, recent) { return ieModel(hass, cfg, recent); }
   static computeLayout(model, cfg) { return ieLayout(model, cfg); }
 
   setConfig(config) {
@@ -1600,6 +1624,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
 
   disconnectedCallback() {
     if (this._ro) this._ro.disconnect();
+    clearTimeout(this._holdTimer);
   }
 
   _signature() {
@@ -1705,6 +1730,33 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     this._wrap.style.height = `${Math.ceil(this._layoutH * k) + 12}px`;
   }
 
+  // With consumers_hide_below, a consumer stays on the card IE_HIDE_HOLD
+  // after its last reading at work, then leaves at the next redraw (a timer
+  // forces one when nothing else moves).
+  _recentConsumers(hass, c) {
+    const below = ieHideBelow(c);
+    if (below === null) return null;
+    this._seen = this._seen || new Map();
+    const now = Date.now();
+    const look = (x, key) => {
+      const w = ieWatts(hass, ieEntityOf(x));
+      if (w !== null && w > below) this._seen.set(key, now);
+    };
+    (Array.isArray(c.consumers) ? c.consumers : []).forEach((x, i) => {
+      look(x, `c${i}`);
+      ((x && x.children) || []).forEach((k, j) => look(k, `c${i}-${j}`));
+    });
+    const recent = new Set();
+    let next = Infinity;
+    for (const [key, at] of this._seen) {
+      const left = at + IE_HIDE_HOLD - now;
+      if (left > 0) { recent.add(key); next = Math.min(next, left); }
+    }
+    clearTimeout(this._holdTimer);
+    if (next !== Infinity) this._holdTimer = setTimeout(() => { this._sig = null; if (this._hass) this._render(); }, next + 200);
+    return recent;
+  }
+
   _render() {
     if (!this._built) this._build();
     const c = this._config;
@@ -1725,7 +1777,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     if (c.title) this._card.setAttribute("header", c.title);
     else this._card.removeAttribute("header");
 
-    const m = ieModel(hass, c);
+    const m = ieModel(hass, c, this._recentConsumers(hass, c));
     const L = ieLayout(m, c);
     this._layoutH = L.height;
     this._layoutW = L.width;
@@ -1755,15 +1807,24 @@ class IllustratedEnergyFlowCard extends HTMLElement {
         if (p && p.name) svg += `<title>${esc(p.name)} · ${esc(fmt(p.w))}</title>`;
         svg += `</g>`;
         const pcx = px + L.pw / 2;
-        if (L.micro || L.optimizers) {
+        if (L.perString) {
+          if (L.view === "panel" && p) svg += ieFlow(ieLine(pcx, L.py + L.ph + 2, pcx, L.bus), p.w, IE_COLORS.solar, peak, { ...fo, gap: 9 });
+          else svg += `<path class="ie-track" d="M${f1(pcx)} ${f1(L.py + L.ph + 2)} V${f1(L.bus)}"/>`;
+        } else if (L.micro || L.optimizers) {
           svg += `<g${p ? hit(p.entity) : ""}>${ieMicro(pcx, L.microY, pwatts !== null && pwatts > 1, animate, L.optimizers)}</g>`;
           if (L.view === "panel" && p) svg += ieFlow(ieLine(pcx, L.microY + 11, pcx, L.bus), p.w, IE_COLORS.solar, peak, { ...fo, gap: 9 });
           else svg += `<path class="ie-track" d="M${f1(pcx)} ${f1(L.microY + 11)} V${f1(L.bus)}"/>`;
         } else if (L.view === "panel" && p) svg += ieFlow(ieLine(pcx, L.py + L.ph + 2, pcx, L.bus), p.w, IE_COLORS.solar, peak, { ...fo, gap: 9 });
       }
       const onBus = L.micro || L.optimizers || (L.view === "panel" && !g.decorative);
-      const fromY = onBus ? L.bus : L.py + L.ph + 3;
+      let fromY = onBus ? L.bus : L.py + L.ph + 3;
       if (onBus && g.drawn > 1) svg += `<path class="ie-bus" d="M${f1(g.x + L.pw / 2)} ${f1(L.bus)} H${f1(g.x + g.width - L.pw / 2)}"/>`;
+      if (L.perString) {
+        // The string's microinverter, fed by the bus, its output going on.
+        svg += `<path class="ie-track" d="M${f1(g.cx)} ${f1(L.bus)} V${f1(L.microY)}"/>`;
+        svg += `<g${hit(g.entity)}>${ieMicro(g.cx, L.microY, g.w !== null && g.w > 1, animate, false, Math.max(18, Math.min(30, g.width - 4)))}</g>`;
+        fromY = L.microY + 11;
+      }
       const mx = L.inv ? (G === 1 ? L.inv.x : L.inv.x - 18 + (36 * gi) / (G - 1)) : L.house.x;
       const spec = ieCubic(g.cx, fromY, g.cx, fromY + 40, mx, invTop - 40, mx, invTop - 4);
       svg += ieFlow(spec, g.w, IE_COLORS.solar, peak * Math.max(1, g.drawn), fo);
@@ -1850,7 +1911,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     if (L.battery) {
       const b = c.battery || {};
       const mode = m.bat === null && m.soc === null ? "unav" : m.bat !== null && m.bat < -1 ? "charging" : m.bat !== null && m.bat > 1 ? "discharging" : m.soc !== null && m.soc >= 99 ? "full" : "idle";
-      const reserve = Number.isFinite(+b.reserve) && b.reserve !== "" && b.reserve !== null ? +b.reserve : null;
+      const reserve = m.reserve;
       const html = D.bat.draw("", { battery: { layout: "wall", level: m.soc, reserve, mode, low: m.soc !== null && reserve !== null && m.soc <= reserve } });
       const state = mode === "charging" ? t("charging") : mode === "discharging" ? t("discharging") : mode === "unav" ? t("unavailable") : t("idle");
       const sub = m.soc !== null ? `${Math.round(m.soc)} % · ${state}` : state;
@@ -1874,8 +1935,8 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     };
     L.consumers.forEach((p, i) => {
       const cm = m.consumers[i];
-      nodes += consumerNode(p, cm, `c${i}`);
-      p.children.forEach((q, j) => { nodes += consumerNode(q, cm.children[j], `c${i}-${j}`); });
+      nodes += consumerNode(p, cm, cm.key);
+      p.children.forEach((q, j) => { nodes += consumerNode(q, cm.children[j], cm.children[j].key); });
     });
     if (!acReady && m.consumers.some((k) => k.type !== "generic" || k.children.some((x) => x.type !== "generic")) && !this._acWait && typeof customElements !== "undefined" && customElements.whenDefined) {
       this._acWait = true;
@@ -1936,14 +1997,15 @@ function ieToForm(cfg, counts) {
     rated_power: c.rated_power || IE_DEFAULTS.rated_power, panel_peak: c.panel_peak || IE_DEFAULTS.panel_peak,
     grid_power: g.power_entity || "", grid_invert: !!g.invert, grid_import: g.import_entity || "",
     grid_export: g.export_entity || "", grid_meter: g.meter || "box", grid_pylon: !!g.pylon, grid_name: g.name || "",
-    solar_power: s.power_entity || "", solar_view: s.view || "panel", panel_device: s.microinverters ? "micro" : s.optimizers ? "optim" : "none",
+    solar_power: s.power_entity || "", solar_view: s.view || "panel", panel_device: s.microinverters === "string" ? "micro_string" : s.microinverters ? "micro" : s.optimizers ? "optim" : "none",
     inverter: inv.show !== false, inverter_power: inv.power_entity || "",
     battery_power: b.power_entity || "", battery_invert: !!b.invert, battery_soc: b.soc_entity || "",
     battery_coupling: b.coupling === "inverter" ? "inverter" : "home",
-    battery_reserve: b.reserve === undefined || b.reserve === null ? "" : b.reserve, battery_name: b.name || "",
+    battery_reserve: b.reserve === undefined || b.reserve === null ? "" : b.reserve, battery_reserve_entity: b.reserve_entity || "", battery_name: b.name || "",
     home_power: h.power_entity || "", home_name: h.name || "",
     strings_count: n.strings, consumers_count: n.consumers,
     consumers_layout: IE_CONSUMER_LAYOUTS.includes(c.consumers_layout) ? c.consumers_layout : "auto",
+    consumers_hide_below: ieHideBelow(c) === null ? "" : ieHideBelow(c),
   };
   const strings = Array.isArray(s.strings) ? s.strings : [];
   for (let i = 0; i < IE_MAX_STRINGS; i++) {
@@ -1976,6 +2038,7 @@ function ieFromForm(d, prev) {
   // Defaults stay out of the YAML: only what differs is written.
   set(out, "language", d.language && d.language !== "auto" ? d.language : "");
   set(out, "flow_style", d.flow_style === "dashes" ? "dashes" : "");
+  set(out, "consumers_hide_below", d.consumers_hide_below === "" || d.consumers_hide_below === null || d.consumers_hide_below === undefined || !Number.isFinite(+d.consumers_hide_below) ? "" : Math.max(0, +d.consumers_hide_below));
   set(out, "consumers_layout", IE_CONSUMER_LAYOUTS.includes(d.consumers_layout) && d.consumers_layout !== "auto" ? d.consumers_layout : "");
   for (const k of ["animate", "dim_inactive", "clickable"]) set(out, k, d[k] === false ? false : "");
   set(out, "decimals", Number(d.decimals) > 0 ? Number(d.decimals) : "");
@@ -2002,7 +2065,7 @@ function ieFromForm(d, prev) {
   section("solar", (s) => {
     set(s, "power_entity", d.solar_power);
     if (d.solar_view && d.solar_view !== "panel") s.view = d.solar_view; else delete s.view;
-    if (d.panel_device === "micro") s.microinverters = true; else delete s.microinverters;
+    if (d.panel_device === "micro") s.microinverters = true; else if (d.panel_device === "micro_string") s.microinverters = "string"; else delete s.microinverters;
     if (d.panel_device === "optim") s.optimizers = true; else delete s.optimizers;
     const old = Array.isArray(s.strings) ? s.strings : [];
     const strings = [];
@@ -2030,6 +2093,7 @@ function ieFromForm(d, prev) {
     if (d.battery_invert) b.invert = true; else delete b.invert;
     if (d.battery_coupling === "inverter") b.coupling = "inverter"; else delete b.coupling;
     set(b, "reserve", d.battery_reserve === "" || d.battery_reserve === null || d.battery_reserve === undefined ? "" : Number(d.battery_reserve));
+    set(b, "reserve_entity", d.battery_reserve_entity);
     set(b, "name", d.battery_name);
     return b;
   });
@@ -2075,6 +2139,8 @@ function ieSchema(hass, lang, data) {
   const t = (k, v) => ieT(lang, k, v);
   const power = ieUnitList(hass, ["W", "kW", "MW"]);
   const pct = ieUnitList(hass, ["%"]);
+  const st = (hass && hass.states) || {};
+  const pctSet = Object.keys(st).filter((id) => /^(sensor|number|input_number)\./.test(id) && String((st[id].attributes || {}).unit_of_measurement || "") === "%").sort();
   const ent = (name, list, label, multiple) => ({ name, label, selector: { entity: { include_entities: list, ...(multiple ? { multiple: true } : {}) } } });
   const txt = (name, label) => ({ name, label, selector: { text: {} } });
   const bool = (name, label) => ({ name, label, selector: { boolean: {} } });
@@ -2138,7 +2204,7 @@ function ieSchema(hass, lang, data) {
         num("panel_peak", t("e_panel_peak"), 50, 1000, 5),
       ]),
       ent("solar_power", power, t("e_solar_power")),
-      sel("panel_device", t("e_panel_device"), [{ value: "none", label: t("e_pd_none") }, { value: "micro", label: t("e_pd_micro") }, { value: "optim", label: t("e_pd_optim") }]),
+      sel("panel_device", t("e_panel_device"), [{ value: "none", label: t("e_pd_none") }, { value: "micro", label: t("e_pd_micro") }, { value: "micro_string", label: t("e_pd_micro_string") }, { value: "optim", label: t("e_pd_optim") }]),
       grid2([bool("inverter", t("e_inverter")), ent("inverter_power", power, t("e_inverter_power"))]),
       num("strings_count", t("e_strings_count"), 0, IE_MAX_STRINGS, 1),
       ...strings,
@@ -2149,6 +2215,7 @@ function ieSchema(hass, lang, data) {
         sel("battery_coupling", t("e_coupling"), [{ value: "home", label: t("e_coupling_home") }, { value: "inverter", label: t("e_coupling_inverter") }]),
         num("battery_reserve", t("e_battery_reserve"), 0, 100, 1),
       ]),
+      ent("battery_reserve_entity", pctSet, t("e_battery_reserve_entity")),
       grid2([bool("battery_invert", t("e_invert")), txt("battery_name", t("e_name"))]),
     ]),
     exp(t("e_home"), [grid2([ent("home_power", power, t("e_home_power")), txt("home_name", t("e_name"))])]),
@@ -2157,6 +2224,7 @@ function ieSchema(hass, lang, data) {
         num("consumers_count", t("e_consumers_count"), 0, IE_MAX_CONSUMERS, 1),
         sel("consumers_layout", t("e_layout"), IE_CONSUMER_LAYOUTS.map((v) => ({ value: v, label: t(`e_layout_${v}`) }))),
       ]),
+      num("consumers_hide_below", t("e_hide_below"), 0, 5000, 1),
       ...consumers,
     ]),
   ];

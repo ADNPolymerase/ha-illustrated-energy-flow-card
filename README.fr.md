@@ -83,7 +83,7 @@ consumers:
 | `solar.strings` | | Liste des strings : `name`, `panels` (entités ou `{entity, name}`), `power_entity` |
 | `solar.power_entity` | somme des strings | Puissance solaire totale |
 | `solar.view` | `panel` | `panel`, `string` ou `total` |
-| `solar.microinverters` | `false` | Un micro-onduleur sous chaque panneau, pas d'onduleur central |
+| `solar.microinverters` | `false` | `true` : un micro-onduleur sous chaque panneau, pas d'onduleur central. `string` : un sous chaque string, pour les doubles et quadruples (APsystems DS3, Hoymiles HM-800) |
 | `solar.optimizers` | `false` | Un optimiseur sous chaque panneau |
 | `inverter.show` | `true` | Dessiner l'onduleur entre les panneaux et la maison |
 | `inverter.power_entity` | total solaire | Sortie de l'onduleur |
@@ -91,12 +91,14 @@ consumers:
 | `battery.invert` | `false` | Inverser le signe |
 | `battery.soc_entity` | | Niveau de charge (%) |
 | `battery.reserve` | | Réserve affichée sur la jauge de la batterie (%) |
+| `battery.reserve_entity` | | La réserve lue sur un capteur ou une entité number (%), à la place de la valeur fixe |
 | `battery.coupling` | `home` | `home`, ou `inverter` pour une batterie côté continu de l'onduleur |
 | `home.power_entity` | calculée | Consommation de la maison |
 | `consumers` | | Liste : `entity`, `name`, `type`, `appliance`, `children` |
 | `consumers[].type` | `generic` | Tout type de HA Appliance Card (`washer`, `printer_3d`, `fridge`, `network`, `ups`...), ou `ev_charger`, `heat_pump`, `water_heater`, `generic` sans elle |
 | `consumers[].appliance` | | Options supplémentaires de HA Appliance Card pour le dessin, par exemple `state_entity` pour un dessin qui suit un état marche/arrêt |
 | `consumers[].children` | | Consommateurs alimentés par celui-ci (un niveau) |
+| `consumers_hide_below` | | Masque les consommateurs qui tirent cette puissance ou moins (W), et ceux indisponibles. Un consommateur qui s'arrête reste deux minutes, celui qui en alimente un autre en marche reste. Vide : tous affichés |
 | `consumers_layout` | `auto` | `column`, `columns` (deux colonnes décalées, bien moins haute) ou `compact` (dessins plus petits et plus serrés). `auto` passe en deux colonnes au-delà de trois consommateurs, une colonne quand un consommateur en alimente d'autres |
 | `panel_peak` | `450` | Puissance crête d'un panneau (W), pour la lueur et la vitesse du flux |
 | `rated_power` | `6000` | Puissance du flux le plus rapide (W) |

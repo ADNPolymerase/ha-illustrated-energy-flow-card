@@ -83,7 +83,7 @@ consumers:
 | `solar.strings` | | List of strings: `name`, `panels` (entity ids or `{entity, name}`), `power_entity` |
 | `solar.power_entity` | sum of strings | Total solar power |
 | `solar.view` | `panel` | `panel`, `string` or `total` |
-| `solar.microinverters` | `false` | One microinverter under each panel, no central inverter |
+| `solar.microinverters` | `false` | `true`: one microinverter under each panel, no central inverter. `string`: one under each string, for the dual and quad ones (APsystems DS3, Hoymiles HM-800) |
 | `solar.optimizers` | `false` | One optimiser under each panel |
 | `inverter.show` | `true` | Draw the inverter between the panels and the home |
 | `inverter.power_entity` | solar total | Inverter output |
@@ -91,12 +91,14 @@ consumers:
 | `battery.invert` | `false` | Invert the sign |
 | `battery.soc_entity` | | State of charge (%) |
 | `battery.reserve` | | Reserve shown on the battery's gauge (%) |
+| `battery.reserve_entity` | | The reserve read from a sensor or a number entity (%), instead of the fixed value |
 | `battery.coupling` | `home` | `home`, or `inverter` for a battery on the inverter's DC side |
 | `home.power_entity` | computed | Home consumption |
 | `consumers` | | List: `entity`, `name`, `type`, `appliance`, `children` |
 | `consumers[].type` | `generic` | Any HA Appliance Card type (`washer`, `printer_3d`, `fridge`, `network`, `ups`...), or `ev_charger`, `heat_pump`, `water_heater`, `generic` without it |
 | `consumers[].appliance` | | Extra HA Appliance Card options for the drawing, such as `state_entity` for a drawing that follows an on/off state |
 | `consumers[].children` | | Consumers fed by this one (one level) |
+| `consumers_hide_below` | | Hide the consumers drawing this power or less (W), and the unavailable ones. A consumer that stops stays two minutes, one feeding another at work stays. Empty: all shown |
 | `consumers_layout` | `auto` | `column`, `columns` (two staggered columns, much less tall) or `compact` (smaller drawings, closer together). `auto` takes two columns past three consumers, one column when a consumer feeds others |
 | `panel_peak` | `450` | Peak power of one panel (W), for the glow and the flow speed |
 | `rated_power` | `6000` | Power of the fastest flow (W) |

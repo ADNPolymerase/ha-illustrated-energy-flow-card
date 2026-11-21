@@ -45,6 +45,7 @@ const IE_MAX_CONSUMERS = 12;
 const IE_ONOFF_TYPES = ["drying_rack"];
 // A consumer drawing more than this is on (W).
 const IE_ON_W = 5;
+const IE_HIDE_HOLD = 120000;
 // The box a HA Appliance Card drawing sits in.
 const IE_AC_W = 130;
 const IE_AC_H = 108;
