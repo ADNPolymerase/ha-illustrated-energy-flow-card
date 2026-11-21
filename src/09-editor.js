@@ -49,6 +49,7 @@ function ieToForm(cfg, counts) {
     strings_count: n.strings, consumers_count: n.consumers,
     consumers_layout: IE_CONSUMER_LAYOUTS.includes(c.consumers_layout) ? c.consumers_layout : "auto",
     consumers_hide_below: ieHideBelow(c) === null ? "" : ieHideBelow(c),
+    style: ieStyle(c), max_scale: ieMaxScale(c),
   };
   const strings = Array.isArray(s.strings) ? s.strings : [];
   for (let i = 0; i < IE_MAX_STRINGS; i++) {
@@ -81,6 +82,8 @@ function ieFromForm(d, prev) {
   // Defaults stay out of the YAML: only what differs is written.
   set(out, "language", d.language && d.language !== "auto" ? d.language : "");
   set(out, "flow_style", d.flow_style === "dashes" ? "dashes" : "");
+  set(out, "style", d.style === "light" ? "light" : "");
+  set(out, "max_scale", d.max_scale === "" || d.max_scale === null || d.max_scale === undefined || !Number.isFinite(+d.max_scale) || ieMaxScale({ max_scale: d.max_scale }) === IE_SCALE_DEFAULT ? "" : ieMaxScale({ max_scale: d.max_scale }));
   set(out, "consumers_hide_below", d.consumers_hide_below === "" || d.consumers_hide_below === null || d.consumers_hide_below === undefined || !Number.isFinite(+d.consumers_hide_below) ? "" : Math.max(0, +d.consumers_hide_below));
   set(out, "consumers_layout", IE_CONSUMER_LAYOUTS.includes(d.consumers_layout) && d.consumers_layout !== "auto" ? d.consumers_layout : "");
   for (const k of ["animate", "dim_inactive", "clickable"]) set(out, k, d[k] === false ? false : "");
@@ -236,6 +239,10 @@ function ieSchema(hass, lang, data) {
         num("decimals", t("e_decimals"), 0, 3, 1), num("rated_power", t("e_rated_power"), 100, 50000, 100),
       ]),
       grid2([bool("animate", t("e_animate")), bool("dim_inactive", t("e_dim_inactive")), bool("clickable", t("e_clickable"))]),
+      grid2([
+        sel("style", t("e_style"), IE_STYLES.map((v) => ({ value: v, label: t(`e_style_${v}`) }))),
+        { name: "max_scale", label: t("e_max_scale"), selector: { number: { min: IE_SCALE_MIN, max: IE_SCALE_MAX, step: 0.05, mode: "slider" } } },
+      ]),
     ]),
     exp(t("e_grid"), [
       ent("grid_power", power, t("e_grid_power")),

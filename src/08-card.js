@@ -12,6 +12,14 @@ const IE_STAGGER = 95;
 // Smaller consumer drawings, closer together.
 const IE_COMPACT_K = 0.75;
 const IE_COMPACT_STEP = 130;
+// The light style: a round icon 44 px high, its name and power on its right.
+const IE_LIGHT_STEP = 58;
+const IE_LIGHT_STAGGER = 34;
+const IE_LIGHT_COL2_W = 180;
+const IE_LIGHT_HALF = 52;
+const IE_LIGHT_RIGHT = 130;
+const IE_LIGHT_EXTRA = 70;
+const IE_LIGHT_AUTO_MAX = 8;
 
 let IE_DRAW = null;
 function ieDrawings() {
@@ -33,16 +41,21 @@ function ieLayout(model, cfg) {
   const ox = pylon ? IE_PYLON_W : 0;
   // Past three consumers the column gets tall: two staggered columns then,
   // unless a consumer feeds others (their column already takes that place).
+  // Light icons are small: one column holds more of them, and compact is
+  // what they already are.
+  const light = ieStyle(c) === "light";
   const askLayout = IE_CONSUMER_LAYOUTS.includes(c.consumers_layout) ? c.consumers_layout : "auto";
-  let cmode = askLayout === "auto" ? (model.consumers.length > 3 && !chains ? "columns" : "column") : askLayout;
+  let cmode = askLayout === "auto" ? (model.consumers.length > (light ? IE_LIGHT_AUTO_MAX : 3) && !chains ? "columns" : "column") : askLayout;
   if (cmode === "columns" && (chains || model.consumers.length < 2)) cmode = "column";
+  if (light && cmode === "compact") cmode = "column";
+  const col2W = light ? IE_LIGHT_COL2_W : IE_COL2_W;
   const houseX = 280 + ox, leftX = 70 + ox, rightX = 490 + ox, childX = rightX + IE_CHILD_W;
   // A string given only by its power, or a solar total alone, still gets a
   // few panels drawn: they stand for it and carry no value of their own.
   let groups = model.strings.map((s) => ({ ...s, drawn: s.panels.length || 3, decorative: !s.panels.length }));
   if (!groups.length && model.hasSolar) groups = [{ name: "", index: 0, entity: "", panels: [], w: model.pv, drawn: 4, decorative: true }];
 
-  const L = { view, groups: [], width: IE_W + ox + (chains ? IE_CHILD_W : 0) + (cmode === "columns" ? IE_COL2_W : 0), micro: !!model.micro, optimizers: !!model.optimizers, cmode };
+  const L = { view, groups: [], width: IE_W + ox + (chains ? IE_CHILD_W : 0) + (cmode === "columns" ? col2W : 0) + (light && model.consumers.length ? IE_LIGHT_EXTRA : 0), micro: !!model.micro, optimizers: !!model.optimizers, cmode, light };
   let solarBottom = 0;
   if (groups.length) {
     const G = groups.length;
@@ -104,11 +117,12 @@ function ieLayout(model, cfg) {
   // column pass between the drawings of the first.
   const minY = (L.groups.length ? solarBottom : 0) + 74;
   if (cmode === "columns") {
-    const span = (model.consumers.length - 1) * IE_STAGGER;
+    const stagger = light ? IE_LIGHT_STAGGER : IE_STAGGER;
+    const span = (model.consumers.length - 1) * stagger;
     const top = Math.max(minY, by - 50 - span / 2);
-    L.consumers = model.consumers.map((k, i) => ({ x: rightX + (i % 2) * IE_COL2_W, y: top + i * IE_STAGGER, col: i % 2, children: [] }));
+    L.consumers = model.consumers.map((k, i) => ({ x: rightX + (i % 2) * col2W, y: top + i * stagger, col: i % 2, children: [] }));
   } else {
-    const step = cmode === "compact" ? IE_COMPACT_STEP : IE_STEP;
+    const step = light ? IE_LIGHT_STEP : cmode === "compact" ? IE_COMPACT_STEP : IE_STEP;
     const blocks = model.consumers.map((k) => Math.max(1, k.children.length) * step);
     const totalH = blocks.reduce((a, b) => a + b, 0);
     let cursor = Math.max(minY, by - 50 - (totalH - step) / 2);
@@ -120,8 +134,9 @@ function ieLayout(model, cfg) {
   }
 
   // How far a consumer's drawing reaches: its left edge, its bottom.
-  const cBottom = cmode === "compact" ? 82 : 112;
-  L.consumerHalf = cmode === "compact" ? 40 : 54;
+  const cBottom = light ? 26 : cmode === "compact" ? 82 : 112;
+  L.consumerHalf = light ? IE_LIGHT_HALF : cmode === "compact" ? 40 : 54;
+  L.consumerRight = light ? IE_LIGHT_RIGHT : L.consumerHalf - 2;
   const bottoms = [by + 52];
   if (L.grid) bottoms.push(L.grid.y + 54 + 58);
   if (L.battery) bottoms.push(L.battery.y + 54 + 58);
@@ -293,12 +308,13 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     if (typeof requestAnimationFrame === "function") requestAnimationFrame(run); else run();
   }
 
-  // Scale the stage to the width of the card, never past 130 %.
+  // Scale the stage to the width of the card, never past max_scale (100 %
+  // unless the config says otherwise, 130 % at most).
   _fit() {
     if (!this._wrap || !this._stage) return;
     const sw = this._layoutW || IE_W;
     const w = this._wrap.clientWidth || sw;
-    const k = Math.max(0.3, Math.min(1.3, w / sw));
+    const k = Math.max(0.3, Math.min(ieMaxScale(this._config), w / sw));
     this._k = k;
     this._stage.style.transform = `scale(${k})`;
     this._stage.style.marginLeft = `${Math.max(0, (w - sw * k) / 2)}px`;
@@ -448,14 +464,17 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       if (p.col) {
         // Into the second column: under the first column's drawing above,
         // across, then up to the consumer.
-        const x0 = p.x - IE_COL2_W, gy = p.y + 19;
-        spec = ieChain(ieCubic(a.x, a.y, a.x + 46, a.y, x0 - 116, gy, x0 - 70, gy), ieLine(x0 - 70, gy, x0 + 62, gy), ieCubic(x0 + 62, gy, x0 + 80, gy, b.x - 14, b.y, b.x, b.y));
+        // Light icons leave a free band level with the second column's own.
+        const x0 = p.x - (L.light ? IE_LIGHT_COL2_W : IE_COL2_W), gy = p.y + (L.light ? 0 : 19);
+        spec = L.light
+          ? ieChain(ieCubic(a.x, a.y, a.x + 46, a.y, x0 - 116, gy, x0 - 70, gy), ieLine(x0 - 70, gy, b.x, b.y))
+          : ieChain(ieCubic(a.x, a.y, a.x + 46, a.y, x0 - 116, gy, x0 - 70, gy), ieLine(x0 - 70, gy, x0 + 62, gy), ieCubic(x0 + 62, gy, x0 + 80, gy, b.x - 14, b.y, b.x, b.y));
       } else spec = ieCubic(a.x, a.y, a.x + 46, a.y, b.x - 46, b.y, b.x, b.y);
       const idle = !(cm.w !== null && cm.w > IE_ON_W);
       svg += `<g${dimOn && idle ? ' class="dim"' : ""}>${ieFlow(spec, cm.w, IE_COLORS.load, rated, fo)}</g>`;
       p.children.forEach((q, j) => {
         const ch = cm.children[j];
-        const ca = { x: p.x + half - 2, y: p.y }, cb = { x: q.x - half, y: q.y };
+        const ca = { x: p.x + (L.consumerRight || half - 2), y: p.y }, cb = { x: q.x - half, y: q.y };
         const cidle = !(ch.w !== null && ch.w > IE_ON_W);
         svg += `<g${dimOn && cidle ? ' class="dim"' : ""}>${ieFlow(ieCubic(ca.x, ca.y, ca.x + 50, ca.y, cb.x - 50, cb.y, cb.x, cb.y), ch.w, IE_COLORS.load, rated, fo)}</g>`;
       });
@@ -496,7 +515,13 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     // card draws it on its own page; otherwise by the drawings copied here.
     const acReady = typeof customElements !== "undefined" && !!customElements.get("ha-appliance-card");
     const wantAc = [];
+    const lightNode = (pos, cm) => {
+      const on = cm.w !== null && cm.w > IE_ON_W;
+      const click = cm.entity && c.clickable !== false;
+      return `<div class="lnode${on ? " on" : ""}${dimOn && !on ? " dim" : ""}${click ? " hit" : ""}"${click ? ` data-entity="${esc(cm.entity)}"` : ""} style="left:${f1(pos.x - IE_LIGHT_HALF)}px;top:${f1(pos.y - 22)}px"><div class="lc"><ha-icon icon="${esc(cm.icon || IE_TYPE_ICONS.generic)}"></ha-icon></div><div class="lt"><div class="nm">${esc(cm.name || t(cm.type))}</div><div class="vl">${esc(cm.w === null ? t("unavailable") : fmt(cm.w))}</div></div></div>`;
+    };
     const consumerNode = (pos, cm, key) => {
+      if (L.light) return lightNode(pos, cm);
       const on = cm.w !== null && cm.w > IE_ON_W;
       let html;
       if (cm.type !== "generic" && acReady) {
@@ -513,7 +538,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       nodes += consumerNode(p, cm, cm.key);
       p.children.forEach((q, j) => { nodes += consumerNode(q, cm.children[j], cm.children[j].key); });
     });
-    if (!acReady && m.consumers.some((k) => k.type !== "generic" || k.children.some((x) => x.type !== "generic")) && !this._acWait && typeof customElements !== "undefined" && customElements.whenDefined) {
+    if (!L.light && !acReady && m.consumers.some((k) => k.type !== "generic" || k.children.some((x) => x.type !== "generic")) && !this._acWait && typeof customElements !== "undefined" && customElements.whenDefined) {
       this._acWait = true;
       customElements.whenDefined("ha-appliance-card").then(() => { this._sig = null; if (this._hass) this._render(); });
     }

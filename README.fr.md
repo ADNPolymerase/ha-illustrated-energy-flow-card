@@ -98,10 +98,13 @@ consumers:
 | `consumers[].type` | `generic` | Tout type de HA Appliance Card (`washer`, `printer_3d`, `fridge`, `network`, `ups`...), ou `ev_charger`, `heat_pump`, `water_heater`, `generic` sans elle |
 | `consumers[].appliance` | | Options supplémentaires de HA Appliance Card pour le dessin, par exemple `state_entity` pour un dessin qui suit un état marche/arrêt |
 | `consumers[].children` | | Consommateurs alimentés par celui-ci (un niveau) |
+| `consumers[].icon` | selon le type | Icône du style allégé ; sans elle, celle du type, puis celle de l'entité |
 | `consumers_hide_below` | | Masque les consommateurs qui tirent cette puissance ou moins (W), et ceux indisponibles. Un consommateur qui s'arrête reste deux minutes, celui qui en alimente un autre en marche reste. Vide : tous affichés |
 | `consumers_layout` | `auto` | `column`, `columns` (deux colonnes décalées, bien moins haute) ou `compact` (dessins plus petits et plus serrés). `auto` passe en deux colonnes au-delà de trois consommateurs, une colonne quand un consommateur en alimente d'autres |
 | `panel_peak` | `450` | Puissance crête d'un panneau (W), pour la lueur et la vitesse du flux |
 | `rated_power` | `6000` | Puissance du flux le plus rapide (W) |
+| `style` | `drawn` | `drawn` (dessiné), ou `light` (allégé) : chaque consommateur devient une icône ronde avec son nom et sa puissance, sans charger HA Appliance Card. Une colonne jusqu'à huit consommateurs |
+| `max_scale` | `1` | Jusqu'où la carte peut grandir au-delà de sa taille, de `0.5` à `1.3` |
 | `flow_style` | `arrows` | `arrows` ou `dashes` |
 | `animate` | `true` | Animer les flux |
 | `dim_inactive` | `true` | Estomper les branches sans puissance |

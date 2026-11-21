@@ -282,6 +282,54 @@ const draw = (config, states = base, lang = "en") => {
   check("the element gets hass even when the card does not redraw", el.hass, quiet);
 }
 
+// ── Light style: round icons, no HA Appliance Card ───────────────────────────
+{
+  const states = { ...base, "sensor.nas": { state: "28", attributes: { unit_of_measurement: "W", icon: "mdi:nas" } } };
+  const light = { ...cfg, style: "light", consumers: [{ entity: "sensor.ev", type: "cooktop", name: "Hob" }, { entity: "sensor.plug", icon: "mdi:fan" }, { entity: "sensor.nas" }] };
+  const card = new Card();
+  card.setConfig(light);
+  card.hass = hassOf(states);
+  const html = card._wrap.innerHTML;
+  check("light: no HA Appliance Card placeholder, even when installed", html.includes("ie-ac") || html.includes("ie-plug"), false);
+  contains("light: a round icon per consumer", html, 'class="lnode on hit"');
+  contains("light: the type gives the icon", html, 'icon="mdi:gas-burner"');
+  contains("light: the config icon wins", html, 'icon="mdi:fan"');
+  contains("light: a generic consumer takes its entity's icon", html, 'icon="mdi:nas"');
+  check("light: name and power beside the icon", /<div class="nm">Hob<\/div><div class="vl">[^<]*3[^<]*<\/div>/.test(html), true);
+  check("light: an idle consumer is dimmed", /class="lnode dim hit" data-entity="sensor.plug"/.test(html), true);
+  const lay = (c) => Card.computeLayout(Card.computeModel(hassOf(states), c), c);
+  const L = lay(light);
+  check("light: one column, a short step", L.cmode === "column" && L.consumers[1].y - L.consumers[0].y, 58);
+  check("light: the stage widens for the names", L.width, 560 + 70);
+  const many = (n, extra) => ({ ...light, ...extra, consumers: Array.from({ length: n }, () => ({ entity: "sensor.plug" })) });
+  check("light: auto keeps one column up to eight", lay(many(8)).cmode, "column");
+  check("light: two columns past eight", lay(many(9)).cmode, "columns");
+  check("light: compact is a column", lay(many(4, { consumers_layout: "compact" })).cmode, "column");
+  check("light: less tall than drawn", lay(many(6)).height < lay(many(6, { style: "drawn" })).height, true);
+  check("drawn stays the default", Card.computeLayout(Card.computeModel(hassOf(states), cfg), cfg).light, false);
+}
+
+// ── Zoom cap: max_scale ──────────────────────────────────────────────────────
+{
+  const fit = (extra, w) => {
+    const card = new Card();
+    card.setConfig({ ...cfg, ...extra });
+    card.hass = hassOf(base);
+    card._wrap.clientWidth = w;
+    card._fit();
+    return card._k;
+  };
+  check("zoom: never past 100 % by default", fit({}, 2000), 1);
+  check("zoom: max_scale raises it", fit({ max_scale: 1.2 }, 2000), 1.2);
+  check("zoom: max_scale lowers it", fit({ max_scale: 0.7 }, 2000), 0.7);
+  check("zoom: capped at 130 %", fit({ max_scale: 5 }, 4000), 1.3);
+  check("zoom: a narrow card still shrinks", fit({ max_scale: 1.2 }, 280), 0.5);
+  check("editor: drawn and 100 % stay out of the YAML", ["style", "max_scale"].some((k) => k in Editor.fromForm({ ...Editor.toForm({}) }, {})), false);
+  const out = Editor.fromForm({ ...Editor.toForm({}), style: "light", max_scale: 0.8 }, {});
+  check("editor: light and a zoom written", out.style === "light" && out.max_scale === 0.8, true);
+  check("editor: style and zoom read back", Editor.toForm({ style: "light", max_scale: 1.1 }).style + Editor.toForm({ style: "light", max_scale: 1.1 }).max_scale, "light1.1");
+}
+
 // ── Editor: the consumer layout ──────────────────────────────────────────────
 {
   check("editor: layout defaults to auto", Editor.toForm({}).consumers_layout, "auto");

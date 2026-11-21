@@ -41,6 +41,22 @@ const IE_BUILTIN_TYPES = ["generic", "ev_charger", "heat_pump", "water_heater"];
 const IE_CONSUMER_TYPES = [...IE_BUILTIN_TYPES, "washer", "dryer", "dishwasher", "fridge", "oven", "cooktop", "microwave", "kettle", "coffee", "printer_3d", "screen", "network", "ups", "air_conditioner", "space_heater", "dehumidifier", "pool_pump", "spa", "robot", "lamp"];
 const IE_METERS = ["box", "linky", "dome"];
 const IE_CONSUMER_LAYOUTS = ["auto", "column", "columns", "compact"];
+// "drawn": the consumers as drawings; "light": as round icons, name and
+// power beside them, and no HA Appliance Card loaded.
+const IE_STYLES = ["drawn", "light"];
+// How far the stage may grow past its own size (max_scale).
+const IE_SCALE_MIN = 0.5;
+const IE_SCALE_MAX = 1.3;
+const IE_SCALE_DEFAULT = 1;
+// The icon of a consumer in the light style, by type.
+const IE_TYPE_ICONS = {
+  generic: "mdi:power-plug", ev_charger: "mdi:ev-station", heat_pump: "mdi:heat-pump", water_heater: "mdi:water-boiler",
+  washer: "mdi:washing-machine", dryer: "mdi:tumble-dryer", dishwasher: "mdi:dishwasher", fridge: "mdi:fridge",
+  oven: "mdi:stove", cooktop: "mdi:gas-burner", microwave: "mdi:microwave", kettle: "mdi:kettle", coffee: "mdi:coffee-maker",
+  printer_3d: "mdi:printer-3d", screen: "mdi:television", network: "mdi:server-network", ups: "mdi:power-plug-battery",
+  air_conditioner: "mdi:air-conditioner", space_heater: "mdi:radiator", dehumidifier: "mdi:air-humidifier",
+  pool_pump: "mdi:pump", spa: "mdi:hot-tub", robot: "mdi:robot-vacuum", lamp: "mdi:lamp", hrv: "mdi:hvac", drying_rack: "mdi:hanger",
+};
 const IE_SOLAR_VIEWS = ["panel", "string", "total"];
 const IE_MAX_STRINGS = 6;
 const IE_MAX_CONSUMERS = 30;
@@ -83,7 +99,7 @@ const IE_I18N = {
     e_home: "Home", e_home_power: "Home power (optional, computed otherwise)",
     e_consumer: "Consumer {n}", e_entity: "Power sensor", e_type: "Drawing",
     washer: "Washing machine", dryer: "Dryer", dishwasher: "Dishwasher", fridge: "Fridge", oven: "Oven", cooktop: "Cooktop", microwave: "Microwave", kettle: "Kettle", coffee: "Coffee machine", printer_3d: "3D printer", screen: "Screen", network: "Network", ups: "UPS", air_conditioner: "Air conditioner", space_heater: "Heater", dehumidifier: "Dehumidifier", pool_pump: "Pool pump", spa: "Spa", robot: "Robot", lamp: "Lamp", e_strings_count: "Number of strings", e_consumers: "Consumers", e_consumers_count: "Number of consumers", e_fed_by: "Fed by", e_none: "The home", e_pylon: "Draw the grid pylon", e_coupling: "Battery connected to", e_coupling_home: "The home (AC)", e_coupling_inverter: "The inverter (DC, hybrid)", e_appliance: "HA Appliance Card options (YAML)", e_layout: "Layout", e_layout_auto: "Automatic", e_layout_column: "One column", e_layout_columns: "Two columns", e_layout_compact: "Compact",
-    e_panel_device: "Electronics under each panel", e_pd_none: "None", e_pd_micro: "Microinverters (no central inverter)", e_pd_optim: "Optimisers (with the inverter)", e_pd_micro_string: "One microinverter per string (2 or 4 panels)", e_battery_reserve_entity: "Reserve from an entity (replaces the value)", e_hide_below: "Hide consumers below (W, empty = show all)", e_type_noac: "Type (drawn as a plug: install HA Appliance Card)",
+    e_panel_device: "Electronics under each panel", e_pd_none: "None", e_pd_micro: "Microinverters (no central inverter)", e_pd_optim: "Optimisers (with the inverter)", e_pd_micro_string: "One microinverter per string (2 or 4 panels)", e_battery_reserve_entity: "Reserve from an entity (replaces the value)", e_hide_below: "Hide consumers below (W, empty = show all)", e_type_noac: "Type (drawn as a plug: install HA Appliance Card)", e_style: "Style", e_style_drawn: "Drawn", e_style_light: "Light (icons)", e_max_scale: "Maximum zoom",
     auto: "Automatic",
   },
   fr: {
@@ -109,7 +125,7 @@ const IE_I18N = {
     e_home: "Maison", e_home_power: "Puissance de la maison (facultatif, calculée sinon)",
     e_consumer: "Consommateur {n}", e_entity: "Capteur de puissance", e_type: "Dessin",
     washer: "Lave-linge", dryer: "Sèche-linge", dishwasher: "Lave-vaisselle", fridge: "Réfrigérateur", oven: "Four", cooktop: "Plaque de cuisson", microwave: "Micro-ondes", kettle: "Bouilloire", coffee: "Machine à café", printer_3d: "Imprimante 3D", screen: "Écran", network: "Réseau informatique", ups: "Onduleur de secours", air_conditioner: "Climatiseur", space_heater: "Radiateur", dehumidifier: "Déshumidificateur", pool_pump: "Pompe de piscine", spa: "Spa", robot: "Robot", lamp: "Lampe", e_strings_count: "Nombre de strings", e_consumers: "Consommateurs", e_consumers_count: "Nombre de consommateurs", e_fed_by: "Alimenté par", e_none: "La maison", e_pylon: "Dessiner le pylône du réseau", e_coupling: "Batterie reliée à", e_coupling_home: "La maison (AC)", e_coupling_inverter: "L'onduleur (DC, hybride)", e_appliance: "Options HA Appliance Card (YAML)", e_layout: "Disposition", e_layout_auto: "Automatique", e_layout_column: "Une colonne", e_layout_columns: "Deux colonnes", e_layout_compact: "Compacte",
-    e_panel_device: "Électronique sous chaque panneau", e_pd_none: "Aucune", e_pd_micro: "Micro-onduleurs (pas d'onduleur central)", e_pd_optim: "Optimiseurs (avec l'onduleur)", e_pd_micro_string: "Un micro-onduleur par string (2 ou 4 panneaux)", e_battery_reserve_entity: "Réserve lue sur une entité (remplace la valeur)", e_hide_below: "Masquer les consommateurs sous (W, vide = tous)", e_type_noac: "Type (dessiné en prise : installez HA Appliance Card)",
+    e_panel_device: "Électronique sous chaque panneau", e_pd_none: "Aucune", e_pd_micro: "Micro-onduleurs (pas d'onduleur central)", e_pd_optim: "Optimiseurs (avec l'onduleur)", e_pd_micro_string: "Un micro-onduleur par string (2 ou 4 panneaux)", e_battery_reserve_entity: "Réserve lue sur une entité (remplace la valeur)", e_hide_below: "Masquer les consommateurs sous (W, vide = tous)", e_type_noac: "Type (dessiné en prise : installez HA Appliance Card)", e_style: "Style", e_style_drawn: "Dessiné", e_style_light: "Allégé (icônes)", e_max_scale: "Zoom maximal",
     auto: "Automatique",
   },
   de: {
@@ -135,7 +151,7 @@ const IE_I18N = {
     e_home: "Haus", e_home_power: "Hausverbrauch (optional, sonst berechnet)",
     e_consumer: "Verbraucher {n}", e_entity: "Leistungssensor", e_type: "Zeichnung",
     washer: "Waschmaschine", dryer: "Trockner", dishwasher: "Geschirrspüler", fridge: "Kühlschrank", oven: "Backofen", cooktop: "Kochfeld", microwave: "Mikrowelle", kettle: "Wasserkocher", coffee: "Kaffeemaschine", printer_3d: "3D-Drucker", screen: "Bildschirm", network: "Netzwerk", ups: "USV", air_conditioner: "Klimaanlage", space_heater: "Heizlüfter", dehumidifier: "Luftentfeuchter", pool_pump: "Poolpumpe", spa: "Whirlpool", robot: "Roboter", lamp: "Lampe", e_strings_count: "Anzahl der Strings", e_consumers: "Verbraucher", e_consumers_count: "Anzahl der Verbraucher", e_fed_by: "Versorgt von", e_none: "Dem Haus", e_pylon: "Strommast zeichnen", e_coupling: "Batterie verbunden mit", e_coupling_home: "Dem Haus (AC)", e_coupling_inverter: "Dem Wechselrichter (DC, Hybrid)", e_appliance: "Optionen der HA Appliance Card (YAML)", e_layout: "Anordnung", e_layout_auto: "Automatisch", e_layout_column: "Eine Spalte", e_layout_columns: "Zwei Spalten", e_layout_compact: "Kompakt",
-    e_panel_device: "Elektronik unter jedem Modul", e_pd_none: "Keine", e_pd_micro: "Mikrowechselrichter (ohne zentralen Wechselrichter)", e_pd_optim: "Optimierer (mit Wechselrichter)", e_pd_micro_string: "Ein Mikrowechselrichter pro String (2 oder 4 Module)", e_battery_reserve_entity: "Reserve aus einer Entität (ersetzt den Wert)", e_hide_below: "Verbraucher ausblenden unter (W, leer = alle)", e_type_noac: "Typ (als Steckdose gezeichnet: HA Appliance Card installieren)",
+    e_panel_device: "Elektronik unter jedem Modul", e_pd_none: "Keine", e_pd_micro: "Mikrowechselrichter (ohne zentralen Wechselrichter)", e_pd_optim: "Optimierer (mit Wechselrichter)", e_pd_micro_string: "Ein Mikrowechselrichter pro String (2 oder 4 Module)", e_battery_reserve_entity: "Reserve aus einer Entität (ersetzt den Wert)", e_hide_below: "Verbraucher ausblenden unter (W, leer = alle)", e_type_noac: "Typ (als Steckdose gezeichnet: HA Appliance Card installieren)", e_style: "Stil", e_style_drawn: "Gezeichnet", e_style_light: "Schlicht (Symbole)", e_max_scale: "Maximaler Zoom",
     auto: "Automatisch",
   },
   es: {
@@ -161,7 +177,7 @@ const IE_I18N = {
     e_home: "Casa", e_home_power: "Potencia de la casa (opcional, calculada si no)",
     e_consumer: "Consumidor {n}", e_entity: "Sensor de potencia", e_type: "Dibujo",
     washer: "Lavadora", dryer: "Secadora", dishwasher: "Lavavajillas", fridge: "Frigorífico", oven: "Horno", cooktop: "Placa de cocina", microwave: "Microondas", kettle: "Hervidor", coffee: "Cafetera", printer_3d: "Impresora 3D", screen: "Pantalla", network: "Red informática", ups: "SAI", air_conditioner: "Aire acondicionado", space_heater: "Calefactor", dehumidifier: "Deshumidificador", pool_pump: "Bomba de piscina", spa: "Spa", robot: "Robot", lamp: "Lámpara", e_strings_count: "Número de strings", e_consumers: "Consumidores", e_consumers_count: "Número de consumidores", e_fed_by: "Alimentado por", e_none: "La casa", e_pylon: "Dibujar la torre eléctrica", e_coupling: "Batería conectada a", e_coupling_home: "La casa (CA)", e_coupling_inverter: "El inversor (CC, híbrido)", e_appliance: "Opciones de HA Appliance Card (YAML)", e_layout: "Disposición", e_layout_auto: "Automática", e_layout_column: "Una columna", e_layout_columns: "Dos columnas", e_layout_compact: "Compacta",
-    e_panel_device: "Electrónica bajo cada panel", e_pd_none: "Ninguna", e_pd_micro: "Microinversores (sin inversor central)", e_pd_optim: "Optimizadores (con el inversor)", e_pd_micro_string: "Un microinversor por string (2 o 4 paneles)", e_battery_reserve_entity: "Reserva desde una entidad (sustituye el valor)", e_hide_below: "Ocultar consumidores por debajo de (W, vacío = todos)", e_type_noac: "Tipo (dibujado como enchufe: instale HA Appliance Card)",
+    e_panel_device: "Electrónica bajo cada panel", e_pd_none: "Ninguna", e_pd_micro: "Microinversores (sin inversor central)", e_pd_optim: "Optimizadores (con el inversor)", e_pd_micro_string: "Un microinversor por string (2 o 4 paneles)", e_battery_reserve_entity: "Reserva desde una entidad (sustituye el valor)", e_hide_below: "Ocultar consumidores por debajo de (W, vacío = todos)", e_type_noac: "Tipo (dibujado como enchufe: instale HA Appliance Card)", e_style: "Estilo", e_style_drawn: "Dibujado", e_style_light: "Ligero (iconos)", e_max_scale: "Zoom máximo",
     auto: "Automático",
   },
   it: {
@@ -187,7 +203,7 @@ const IE_I18N = {
     e_home: "Casa", e_home_power: "Potenza della casa (facoltativa, altrimenti calcolata)",
     e_consumer: "Utenza {n}", e_entity: "Sensore di potenza", e_type: "Disegno",
     washer: "Lavatrice", dryer: "Asciugatrice", dishwasher: "Lavastoviglie", fridge: "Frigorifero", oven: "Forno", cooktop: "Piano cottura", microwave: "Microonde", kettle: "Bollitore", coffee: "Macchina da caffè", printer_3d: "Stampante 3D", screen: "Schermo", network: "Rete informatica", ups: "UPS", air_conditioner: "Condizionatore", space_heater: "Stufetta", dehumidifier: "Deumidificatore", pool_pump: "Pompa della piscina", spa: "Spa", robot: "Robot", lamp: "Lampada", e_strings_count: "Numero di stringhe", e_consumers: "Utenze", e_consumers_count: "Numero di utenze", e_fed_by: "Alimentato da", e_none: "La casa", e_pylon: "Disegnare il traliccio", e_coupling: "Batteria collegata a", e_coupling_home: "La casa (CA)", e_coupling_inverter: "L'inverter (CC, ibrido)", e_appliance: "Opzioni di HA Appliance Card (YAML)", e_layout: "Disposizione", e_layout_auto: "Automatica", e_layout_column: "Una colonna", e_layout_columns: "Due colonne", e_layout_compact: "Compatta",
-    e_panel_device: "Elettronica sotto ogni pannello", e_pd_none: "Nessuna", e_pd_micro: "Microinverter (senza inverter centrale)", e_pd_optim: "Ottimizzatori (con l'inverter)", e_pd_micro_string: "Un microinverter per stringa (2 o 4 pannelli)", e_battery_reserve_entity: "Riserva da un'entità (sostituisce il valore)", e_hide_below: "Nascondi le utenze sotto (W, vuoto = tutte)", e_type_noac: "Tipo (disegnato come presa: installa HA Appliance Card)",
+    e_panel_device: "Elettronica sotto ogni pannello", e_pd_none: "Nessuna", e_pd_micro: "Microinverter (senza inverter centrale)", e_pd_optim: "Ottimizzatori (con l'inverter)", e_pd_micro_string: "Un microinverter per stringa (2 o 4 pannelli)", e_battery_reserve_entity: "Riserva da un'entità (sostituisce il valore)", e_hide_below: "Nascondi le utenze sotto (W, vuoto = tutte)", e_type_noac: "Tipo (disegnato come presa: installa HA Appliance Card)", e_style: "Stile", e_style_drawn: "Disegnato", e_style_light: "Leggero (icone)", e_max_scale: "Zoom massimo",
     auto: "Automatico",
   },
   nl: {
@@ -213,7 +229,7 @@ const IE_I18N = {
     e_home: "Huis", e_home_power: "Huisverbruik (optioneel, anders berekend)",
     e_consumer: "Verbruiker {n}", e_entity: "Vermogenssensor", e_type: "Tekening",
     washer: "Wasmachine", dryer: "Droger", dishwasher: "Vaatwasser", fridge: "Koelkast", oven: "Oven", cooktop: "Kookplaat", microwave: "Magnetron", kettle: "Waterkoker", coffee: "Koffiezetapparaat", printer_3d: "3D-printer", screen: "Scherm", network: "Netwerk", ups: "UPS", air_conditioner: "Airco", space_heater: "Kachel", dehumidifier: "Ontvochtiger", pool_pump: "Zwembadpomp", spa: "Spa", robot: "Robot", lamp: "Lamp", e_strings_count: "Aantal strings", e_consumers: "Verbruikers", e_consumers_count: "Aantal verbruikers", e_fed_by: "Gevoed door", e_none: "Het huis", e_pylon: "Hoogspanningsmast tekenen", e_coupling: "Batterij verbonden met", e_coupling_home: "Het huis (AC)", e_coupling_inverter: "De omvormer (DC, hybride)", e_appliance: "Opties van HA Appliance Card (YAML)", e_layout: "Indeling", e_layout_auto: "Automatisch", e_layout_column: "Eén kolom", e_layout_columns: "Twee kolommen", e_layout_compact: "Compact",
-    e_panel_device: "Elektronica onder elk paneel", e_pd_none: "Geen", e_pd_micro: "Micro-omvormers (geen centrale omvormer)", e_pd_optim: "Optimizers (met de omvormer)", e_pd_micro_string: "Eén micro-omvormer per string (2 of 4 panelen)", e_battery_reserve_entity: "Reserve uit een entiteit (vervangt de waarde)", e_hide_below: "Verbruikers verbergen onder (W, leeg = alle)", e_type_noac: "Type (als stekker getekend: installeer HA Appliance Card)",
+    e_panel_device: "Elektronica onder elk paneel", e_pd_none: "Geen", e_pd_micro: "Micro-omvormers (geen centrale omvormer)", e_pd_optim: "Optimizers (met de omvormer)", e_pd_micro_string: "Eén micro-omvormer per string (2 of 4 panelen)", e_battery_reserve_entity: "Reserve uit een entiteit (vervangt de waarde)", e_hide_below: "Verbruikers verbergen onder (W, leeg = alle)", e_type_noac: "Type (als stekker getekend: installeer HA Appliance Card)", e_style: "Stijl", e_style_drawn: "Getekend", e_style_light: "Licht (pictogrammen)", e_max_scale: "Maximale zoom",
     auto: "Automatisch",
   },
 };
@@ -447,7 +463,7 @@ function ieModel(hass, cfg, recent) {
     const entity = ieEntityOf(x);
     const type = x && typeof x.type === "string" && /^[a-z0-9_]+$/.test(x.type) ? x.type : "generic";
     const kids = !key.includes("-") && x && Array.isArray(x.children) ? x.children.map((k, j) => [k, j]).filter(([k]) => ieEntityOf(k)).map(([k, j]) => consumerOf(k, `${key}-${j}`)) : [];
-    return { entity, key, name: ieNameOf(x), type, w: ieWatts(hass, entity), appliance: x && typeof x.appliance === "object" ? x.appliance : null, children: kids };
+    return { entity, key, name: ieNameOf(x), type, icon: ieIconOf(hass, x, entity, type), w: ieWatts(hass, entity), appliance: x && typeof x.appliance === "object" ? x.appliance : null, children: kids };
   };
   let consumers = (Array.isArray(c.consumers) ? c.consumers : []).map((x, i) => [x, i]).filter(([x]) => ieEntityOf(x)).map(([x, i]) => consumerOf(x, `c${i}`));
   // Only the consumers at work, when asked: below the threshold (or
@@ -504,6 +520,24 @@ function ieWatched(cfg) {
     for (const k of (x && x.children) || []) add(ieEntityOf(k));
   }
   return out;
+}
+
+// The icon of a consumer in the light style: the one the config gives, the
+// one its type stands for, the entity's own, else a plug.
+function ieIconOf(hass, x, entity, type) {
+  if (x && typeof x.icon === "string" && x.icon) return x.icon;
+  if (type !== "generic" && IE_TYPE_ICONS[type]) return IE_TYPE_ICONS[type];
+  const st = hass && hass.states && hass.states[entity];
+  const own = st && st.attributes && st.attributes.icon;
+  return typeof own === "string" && own ? own : IE_TYPE_ICONS.generic;
+}
+
+// The light style and the zoom cap, read from the config.
+function ieStyle(c) { return IE_STYLES.includes(c && c.style) ? c.style : "drawn"; }
+function ieMaxScale(c) {
+  const v = c && c.max_scale;
+  if (v === "" || v === null || v === undefined || !Number.isFinite(+v)) return IE_SCALE_DEFAULT;
+  return Math.max(IE_SCALE_MIN, Math.min(IE_SCALE_MAX, +v));
 }
 
 // ---- src/05-draw-new.js
@@ -1430,6 +1464,13 @@ const IE_CSS = `
   .node .ie-ac > ha-appliance-card { position: absolute; left: 0; top: -16px; width: 130px; }
   /* Compact consumers: the drawing at three quarters, its labels unchanged. */
   .node.cmp > .machine, .node.cmp > .ie-ac { transform: scale(.75); transform-origin: 50% 0; margin-bottom: -27px; }
+  /* Light style: a round icon, its name and power on its right. */
+  .lnode { position: absolute; display: flex; align-items: center; gap: 8px; width: 182px; height: 44px; color: var(--primary-text-color, #1f262e); }
+  .lnode .lc { flex: none; box-sizing: border-box; width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--divider-color, #c9d0d6); display: flex; align-items: center; justify-content: center; color: var(--secondary-text-color, #6b7684); background: var(--card-background-color, var(--ha-card-background, #fff)); --mdc-icon-size: 24px; }
+  .lnode.on .lc { border-color: ${IE_COLORS.load}; color: ${IE_COLORS.load}; }
+  .lnode .lt { min-width: 0; text-align: left; }
+  .lnode .nm { font-size: 12px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 128px; }
+  .lnode .vl { font-size: 14px; font-weight: 600; line-height: 1.25; }
   @media (prefers-reduced-motion: reduce) { .stage * { animation: none !important; } }
 `;
 
@@ -1448,6 +1489,14 @@ const IE_STAGGER = 95;
 // Smaller consumer drawings, closer together.
 const IE_COMPACT_K = 0.75;
 const IE_COMPACT_STEP = 130;
+// The light style: a round icon 44 px high, its name and power on its right.
+const IE_LIGHT_STEP = 58;
+const IE_LIGHT_STAGGER = 34;
+const IE_LIGHT_COL2_W = 180;
+const IE_LIGHT_HALF = 52;
+const IE_LIGHT_RIGHT = 130;
+const IE_LIGHT_EXTRA = 70;
+const IE_LIGHT_AUTO_MAX = 8;
 
 let IE_DRAW = null;
 function ieDrawings() {
@@ -1469,16 +1518,21 @@ function ieLayout(model, cfg) {
   const ox = pylon ? IE_PYLON_W : 0;
   // Past three consumers the column gets tall: two staggered columns then,
   // unless a consumer feeds others (their column already takes that place).
+  // Light icons are small: one column holds more of them, and compact is
+  // what they already are.
+  const light = ieStyle(c) === "light";
   const askLayout = IE_CONSUMER_LAYOUTS.includes(c.consumers_layout) ? c.consumers_layout : "auto";
-  let cmode = askLayout === "auto" ? (model.consumers.length > 3 && !chains ? "columns" : "column") : askLayout;
+  let cmode = askLayout === "auto" ? (model.consumers.length > (light ? IE_LIGHT_AUTO_MAX : 3) && !chains ? "columns" : "column") : askLayout;
   if (cmode === "columns" && (chains || model.consumers.length < 2)) cmode = "column";
+  if (light && cmode === "compact") cmode = "column";
+  const col2W = light ? IE_LIGHT_COL2_W : IE_COL2_W;
   const houseX = 280 + ox, leftX = 70 + ox, rightX = 490 + ox, childX = rightX + IE_CHILD_W;
   // A string given only by its power, or a solar total alone, still gets a
   // few panels drawn: they stand for it and carry no value of their own.
   let groups = model.strings.map((s) => ({ ...s, drawn: s.panels.length || 3, decorative: !s.panels.length }));
   if (!groups.length && model.hasSolar) groups = [{ name: "", index: 0, entity: "", panels: [], w: model.pv, drawn: 4, decorative: true }];
 
-  const L = { view, groups: [], width: IE_W + ox + (chains ? IE_CHILD_W : 0) + (cmode === "columns" ? IE_COL2_W : 0), micro: !!model.micro, optimizers: !!model.optimizers, cmode };
+  const L = { view, groups: [], width: IE_W + ox + (chains ? IE_CHILD_W : 0) + (cmode === "columns" ? col2W : 0) + (light && model.consumers.length ? IE_LIGHT_EXTRA : 0), micro: !!model.micro, optimizers: !!model.optimizers, cmode, light };
   let solarBottom = 0;
   if (groups.length) {
     const G = groups.length;
@@ -1540,11 +1594,12 @@ function ieLayout(model, cfg) {
   // column pass between the drawings of the first.
   const minY = (L.groups.length ? solarBottom : 0) + 74;
   if (cmode === "columns") {
-    const span = (model.consumers.length - 1) * IE_STAGGER;
+    const stagger = light ? IE_LIGHT_STAGGER : IE_STAGGER;
+    const span = (model.consumers.length - 1) * stagger;
     const top = Math.max(minY, by - 50 - span / 2);
-    L.consumers = model.consumers.map((k, i) => ({ x: rightX + (i % 2) * IE_COL2_W, y: top + i * IE_STAGGER, col: i % 2, children: [] }));
+    L.consumers = model.consumers.map((k, i) => ({ x: rightX + (i % 2) * col2W, y: top + i * stagger, col: i % 2, children: [] }));
   } else {
-    const step = cmode === "compact" ? IE_COMPACT_STEP : IE_STEP;
+    const step = light ? IE_LIGHT_STEP : cmode === "compact" ? IE_COMPACT_STEP : IE_STEP;
     const blocks = model.consumers.map((k) => Math.max(1, k.children.length) * step);
     const totalH = blocks.reduce((a, b) => a + b, 0);
     let cursor = Math.max(minY, by - 50 - (totalH - step) / 2);
@@ -1556,8 +1611,9 @@ function ieLayout(model, cfg) {
   }
 
   // How far a consumer's drawing reaches: its left edge, its bottom.
-  const cBottom = cmode === "compact" ? 82 : 112;
-  L.consumerHalf = cmode === "compact" ? 40 : 54;
+  const cBottom = light ? 26 : cmode === "compact" ? 82 : 112;
+  L.consumerHalf = light ? IE_LIGHT_HALF : cmode === "compact" ? 40 : 54;
+  L.consumerRight = light ? IE_LIGHT_RIGHT : L.consumerHalf - 2;
   const bottoms = [by + 52];
   if (L.grid) bottoms.push(L.grid.y + 54 + 58);
   if (L.battery) bottoms.push(L.battery.y + 54 + 58);
@@ -1729,12 +1785,13 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     if (typeof requestAnimationFrame === "function") requestAnimationFrame(run); else run();
   }
 
-  // Scale the stage to the width of the card, never past 130 %.
+  // Scale the stage to the width of the card, never past max_scale (100 %
+  // unless the config says otherwise, 130 % at most).
   _fit() {
     if (!this._wrap || !this._stage) return;
     const sw = this._layoutW || IE_W;
     const w = this._wrap.clientWidth || sw;
-    const k = Math.max(0.3, Math.min(1.3, w / sw));
+    const k = Math.max(0.3, Math.min(ieMaxScale(this._config), w / sw));
     this._k = k;
     this._stage.style.transform = `scale(${k})`;
     this._stage.style.marginLeft = `${Math.max(0, (w - sw * k) / 2)}px`;
@@ -1884,14 +1941,17 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       if (p.col) {
         // Into the second column: under the first column's drawing above,
         // across, then up to the consumer.
-        const x0 = p.x - IE_COL2_W, gy = p.y + 19;
-        spec = ieChain(ieCubic(a.x, a.y, a.x + 46, a.y, x0 - 116, gy, x0 - 70, gy), ieLine(x0 - 70, gy, x0 + 62, gy), ieCubic(x0 + 62, gy, x0 + 80, gy, b.x - 14, b.y, b.x, b.y));
+        // Light icons leave a free band level with the second column's own.
+        const x0 = p.x - (L.light ? IE_LIGHT_COL2_W : IE_COL2_W), gy = p.y + (L.light ? 0 : 19);
+        spec = L.light
+          ? ieChain(ieCubic(a.x, a.y, a.x + 46, a.y, x0 - 116, gy, x0 - 70, gy), ieLine(x0 - 70, gy, b.x, b.y))
+          : ieChain(ieCubic(a.x, a.y, a.x + 46, a.y, x0 - 116, gy, x0 - 70, gy), ieLine(x0 - 70, gy, x0 + 62, gy), ieCubic(x0 + 62, gy, x0 + 80, gy, b.x - 14, b.y, b.x, b.y));
       } else spec = ieCubic(a.x, a.y, a.x + 46, a.y, b.x - 46, b.y, b.x, b.y);
       const idle = !(cm.w !== null && cm.w > IE_ON_W);
       svg += `<g${dimOn && idle ? ' class="dim"' : ""}>${ieFlow(spec, cm.w, IE_COLORS.load, rated, fo)}</g>`;
       p.children.forEach((q, j) => {
         const ch = cm.children[j];
-        const ca = { x: p.x + half - 2, y: p.y }, cb = { x: q.x - half, y: q.y };
+        const ca = { x: p.x + (L.consumerRight || half - 2), y: p.y }, cb = { x: q.x - half, y: q.y };
         const cidle = !(ch.w !== null && ch.w > IE_ON_W);
         svg += `<g${dimOn && cidle ? ' class="dim"' : ""}>${ieFlow(ieCubic(ca.x, ca.y, ca.x + 50, ca.y, cb.x - 50, cb.y, cb.x, cb.y), ch.w, IE_COLORS.load, rated, fo)}</g>`;
       });
@@ -1932,7 +1992,13 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     // card draws it on its own page; otherwise by the drawings copied here.
     const acReady = typeof customElements !== "undefined" && !!customElements.get("ha-appliance-card");
     const wantAc = [];
+    const lightNode = (pos, cm) => {
+      const on = cm.w !== null && cm.w > IE_ON_W;
+      const click = cm.entity && c.clickable !== false;
+      return `<div class="lnode${on ? " on" : ""}${dimOn && !on ? " dim" : ""}${click ? " hit" : ""}"${click ? ` data-entity="${esc(cm.entity)}"` : ""} style="left:${f1(pos.x - IE_LIGHT_HALF)}px;top:${f1(pos.y - 22)}px"><div class="lc"><ha-icon icon="${esc(cm.icon || IE_TYPE_ICONS.generic)}"></ha-icon></div><div class="lt"><div class="nm">${esc(cm.name || t(cm.type))}</div><div class="vl">${esc(cm.w === null ? t("unavailable") : fmt(cm.w))}</div></div></div>`;
+    };
     const consumerNode = (pos, cm, key) => {
+      if (L.light) return lightNode(pos, cm);
       const on = cm.w !== null && cm.w > IE_ON_W;
       let html;
       if (cm.type !== "generic" && acReady) {
@@ -1949,7 +2015,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       nodes += consumerNode(p, cm, cm.key);
       p.children.forEach((q, j) => { nodes += consumerNode(q, cm.children[j], cm.children[j].key); });
     });
-    if (!acReady && m.consumers.some((k) => k.type !== "generic" || k.children.some((x) => x.type !== "generic")) && !this._acWait && typeof customElements !== "undefined" && customElements.whenDefined) {
+    if (!L.light && !acReady && m.consumers.some((k) => k.type !== "generic" || k.children.some((x) => x.type !== "generic")) && !this._acWait && typeof customElements !== "undefined" && customElements.whenDefined) {
       this._acWait = true;
       customElements.whenDefined("ha-appliance-card").then(() => { this._sig = null; if (this._hass) this._render(); });
     }
@@ -2017,6 +2083,7 @@ function ieToForm(cfg, counts) {
     strings_count: n.strings, consumers_count: n.consumers,
     consumers_layout: IE_CONSUMER_LAYOUTS.includes(c.consumers_layout) ? c.consumers_layout : "auto",
     consumers_hide_below: ieHideBelow(c) === null ? "" : ieHideBelow(c),
+    style: ieStyle(c), max_scale: ieMaxScale(c),
   };
   const strings = Array.isArray(s.strings) ? s.strings : [];
   for (let i = 0; i < IE_MAX_STRINGS; i++) {
@@ -2049,6 +2116,8 @@ function ieFromForm(d, prev) {
   // Defaults stay out of the YAML: only what differs is written.
   set(out, "language", d.language && d.language !== "auto" ? d.language : "");
   set(out, "flow_style", d.flow_style === "dashes" ? "dashes" : "");
+  set(out, "style", d.style === "light" ? "light" : "");
+  set(out, "max_scale", d.max_scale === "" || d.max_scale === null || d.max_scale === undefined || !Number.isFinite(+d.max_scale) || ieMaxScale({ max_scale: d.max_scale }) === IE_SCALE_DEFAULT ? "" : ieMaxScale({ max_scale: d.max_scale }));
   set(out, "consumers_hide_below", d.consumers_hide_below === "" || d.consumers_hide_below === null || d.consumers_hide_below === undefined || !Number.isFinite(+d.consumers_hide_below) ? "" : Math.max(0, +d.consumers_hide_below));
   set(out, "consumers_layout", IE_CONSUMER_LAYOUTS.includes(d.consumers_layout) && d.consumers_layout !== "auto" ? d.consumers_layout : "");
   for (const k of ["animate", "dim_inactive", "clickable"]) set(out, k, d[k] === false ? false : "");
@@ -2204,6 +2273,10 @@ function ieSchema(hass, lang, data) {
         num("decimals", t("e_decimals"), 0, 3, 1), num("rated_power", t("e_rated_power"), 100, 50000, 100),
       ]),
       grid2([bool("animate", t("e_animate")), bool("dim_inactive", t("e_dim_inactive")), bool("clickable", t("e_clickable"))]),
+      grid2([
+        sel("style", t("e_style"), IE_STYLES.map((v) => ({ value: v, label: t(`e_style_${v}`) }))),
+        { name: "max_scale", label: t("e_max_scale"), selector: { number: { min: IE_SCALE_MIN, max: IE_SCALE_MAX, step: 0.05, mode: "slider" } } },
+      ]),
     ]),
     exp(t("e_grid"), [
       ent("grid_power", power, t("e_grid_power")),

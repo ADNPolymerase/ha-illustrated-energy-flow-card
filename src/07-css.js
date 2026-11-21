@@ -32,5 +32,12 @@ const IE_CSS = `
   .node .ie-ac > ha-appliance-card { position: absolute; left: 0; top: -16px; width: 130px; }
   /* Compact consumers: the drawing at three quarters, its labels unchanged. */
   .node.cmp > .machine, .node.cmp > .ie-ac { transform: scale(.75); transform-origin: 50% 0; margin-bottom: -27px; }
+  /* Light style: a round icon, its name and power on its right. */
+  .lnode { position: absolute; display: flex; align-items: center; gap: 8px; width: 182px; height: 44px; color: var(--primary-text-color, #1f262e); }
+  .lnode .lc { flex: none; box-sizing: border-box; width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--divider-color, #c9d0d6); display: flex; align-items: center; justify-content: center; color: var(--secondary-text-color, #6b7684); background: var(--card-background-color, var(--ha-card-background, #fff)); --mdc-icon-size: 24px; }
+  .lnode.on .lc { border-color: ${IE_COLORS.load}; color: ${IE_COLORS.load}; }
+  .lnode .lt { min-width: 0; text-align: left; }
+  .lnode .nm { font-size: 12px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 128px; }
+  .lnode .vl { font-size: 14px; font-weight: 600; line-height: 1.25; }
   @media (prefers-reduced-motion: reduce) { .stage * { animation: none !important; } }
 `;

@@ -63,7 +63,7 @@ function ieModel(hass, cfg, recent) {
     const entity = ieEntityOf(x);
     const type = x && typeof x.type === "string" && /^[a-z0-9_]+$/.test(x.type) ? x.type : "generic";
     const kids = !key.includes("-") && x && Array.isArray(x.children) ? x.children.map((k, j) => [k, j]).filter(([k]) => ieEntityOf(k)).map(([k, j]) => consumerOf(k, `${key}-${j}`)) : [];
-    return { entity, key, name: ieNameOf(x), type, w: ieWatts(hass, entity), appliance: x && typeof x.appliance === "object" ? x.appliance : null, children: kids };
+    return { entity, key, name: ieNameOf(x), type, icon: ieIconOf(hass, x, entity, type), w: ieWatts(hass, entity), appliance: x && typeof x.appliance === "object" ? x.appliance : null, children: kids };
   };
   let consumers = (Array.isArray(c.consumers) ? c.consumers : []).map((x, i) => [x, i]).filter(([x]) => ieEntityOf(x)).map(([x, i]) => consumerOf(x, `c${i}`));
   // Only the consumers at work, when asked: below the threshold (or
@@ -120,4 +120,22 @@ function ieWatched(cfg) {
     for (const k of (x && x.children) || []) add(ieEntityOf(k));
   }
   return out;
+}
+
+// The icon of a consumer in the light style: the one the config gives, the
+// one its type stands for, the entity's own, else a plug.
+function ieIconOf(hass, x, entity, type) {
+  if (x && typeof x.icon === "string" && x.icon) return x.icon;
+  if (type !== "generic" && IE_TYPE_ICONS[type]) return IE_TYPE_ICONS[type];
+  const st = hass && hass.states && hass.states[entity];
+  const own = st && st.attributes && st.attributes.icon;
+  return typeof own === "string" && own ? own : IE_TYPE_ICONS.generic;
+}
+
+// The light style and the zoom cap, read from the config.
+function ieStyle(c) { return IE_STYLES.includes(c && c.style) ? c.style : "drawn"; }
+function ieMaxScale(c) {
+  const v = c && c.max_scale;
+  if (v === "" || v === null || v === undefined || !Number.isFinite(+v)) return IE_SCALE_DEFAULT;
+  return Math.max(IE_SCALE_MIN, Math.min(IE_SCALE_MAX, +v));
 }
