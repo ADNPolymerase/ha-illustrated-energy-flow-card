@@ -3,7 +3,7 @@
 // panel, string by string or as a total.
 // https://github.com/ADNPolymerase/ha-illustrated-energy-flow-card
 
-const IE_VERSION = "0.2.2";
+const IE_VERSION = "0.2.3";
 const IE_TAG = "illustrated-energy-flow-card";
 const IE_EDITOR_TAG = "illustrated-energy-flow-card-editor";
 
@@ -40,7 +40,7 @@ const IE_METERS = ["box", "linky", "dome"];
 const IE_CONSUMER_LAYOUTS = ["auto", "column", "columns", "compact"];
 const IE_SOLAR_VIEWS = ["panel", "string", "total"];
 const IE_MAX_STRINGS = 6;
-const IE_MAX_CONSUMERS = 12;
+const IE_MAX_CONSUMERS = 30;
 // HA Appliance Card types whose drawing follows an on/off state.
 const IE_ONOFF_TYPES = ["drying_rack"];
 // A consumer drawing more than this is on (W).

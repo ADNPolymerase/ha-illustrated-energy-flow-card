@@ -490,6 +490,20 @@ const draw = (config, states = base, lang = "en") => {
   check("editor: threshold read back", Editor.toForm({ consumers_hide_below: 8 }).consumers_hide_below, 8);
 }
 
+// ── Full section width, thirty consumers, type hint without Appliance Card ──
+{
+  check("grid: the card takes the section's whole width", new Card().getGridOptions().columns, "full");
+  const thirty = Array.from({ length: 30 }, (_, i) => ({ entity: `sensor.c${i}` }));
+  check("editor: thirty consumers kept", Editor.toForm({ consumers: thirty }).consumers_count, 30);
+  check("editor: past thirty capped", Editor.toForm({ consumers: [...thirty, { entity: "sensor.x" }] }).consumers_count, 30);
+  const flat = (sc) => JSON.stringify(sc);
+  const hasAc = !!(globalThis.customElements && customElements.get("ha-appliance-card"));
+  const d = Editor.toForm({ consumers: [{ entity: "sensor.a", type: "network" }, { entity: "sensor.b", type: "ev_charger" }] });
+  const sc = flat(Editor.schema(hassOf(base), "en", d));
+  check("editor: a drawing needing Appliance Card is flagged", sc.includes("drawn as a plug"), !hasAc);
+  check("editor: a built-in type is not flagged", (sc.match(/drawn as a plug/g) || []).length, hasAc ? 0 : 1);
+}
+
 // ── Stub config ──────────────────────────────────────────────────────────────
 {
   const stub = Card.getStubConfig(hassOf({ "sensor.grid_power": S(10), "sensor.solar_power": S(10), "sensor.battery_power": S(1), "sensor.battery_level": S(50, "%") }));

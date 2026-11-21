@@ -178,7 +178,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
   }
 
   getGridOptions() {
-    return { columns: 12, min_columns: 6 };
+    return { columns: "full", min_columns: 6 };
   }
 
   connectedCallback() {
