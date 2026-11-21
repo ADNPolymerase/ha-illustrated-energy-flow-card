@@ -49,3 +49,5 @@ const IE_HIDE_HOLD = 120000;
 // The box a HA Appliance Card drawing sits in.
 const IE_AC_W = 130;
 const IE_AC_H = 108;
+// What an embedded HA Appliance Card must not show under its drawing.
+const IE_AC_HIDE_CSS = ".info-lines, .line-menu, .sliders, .history, .history-toggle { display: none !important; }";

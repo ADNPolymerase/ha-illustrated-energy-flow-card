@@ -52,6 +52,8 @@ const IE_HIDE_HOLD = 120000;
 // The box a HA Appliance Card drawing sits in.
 const IE_AC_W = 130;
 const IE_AC_H = 108;
+// What an embedded HA Appliance Card must not show under its drawing.
+const IE_AC_HIDE_CSS = ".info-lines, .line-menu, .sliders, .history, .history-toggle { display: none !important; }";
 
 // ---- src/01-i18n.js
 // Every text the card and its editor show, in the six languages. Missing keys
@@ -1677,6 +1679,15 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       }
       rec.el.hass = synth ? this._synthHass(rec, synth, cm.w) : this._hass;
       if (rec.el.parentNode !== holder) holder.appendChild(rec.el);
+      // Only its picture: the lines, sliders and history it draws under it
+      // (a hob's cooking zones) would spill over the name and the value.
+      const root = rec.el.shadowRoot;
+      if (root && !root.querySelector("style[data-ie]")) {
+        const st = document.createElement("style");
+        st.setAttribute("data-ie", "");
+        st.textContent = IE_AC_HIDE_CSS;
+        root.appendChild(st);
+      }
       keep.add(key);
       this._fitAppliance(rec.el);
     }

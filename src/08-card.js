@@ -243,6 +243,15 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       }
       rec.el.hass = synth ? this._synthHass(rec, synth, cm.w) : this._hass;
       if (rec.el.parentNode !== holder) holder.appendChild(rec.el);
+      // Only its picture: the lines, sliders and history it draws under it
+      // (a hob's cooking zones) would spill over the name and the value.
+      const root = rec.el.shadowRoot;
+      if (root && !root.querySelector("style[data-ie]")) {
+        const st = document.createElement("style");
+        st.setAttribute("data-ie", "");
+        st.textContent = IE_AC_HIDE_CSS;
+        root.appendChild(st);
+      }
       keep.add(key);
       this._fitAppliance(rec.el);
     }

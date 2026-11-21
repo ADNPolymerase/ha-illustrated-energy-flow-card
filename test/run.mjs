@@ -257,7 +257,7 @@ const draw = (config, states = base, lang = "en") => {
 {
   const before = draw({ consumers: [{ entity: "sensor.ev", type: "printer_3d" }] });
   check("without HA Appliance Card: a plug stands in", before.includes("ie-plug") && !before.includes("ie-ac"), true);
-  customElements.define("ha-appliance-card", class extends HTMLElement { setConfig(c) { this.cfg = c; } });
+  customElements.define("ha-appliance-card", class extends HTMLElement { setConfig(c) { this.cfg = c; if (!this.shadowRoot) { const r = this.attachShadow({ mode: "open" }); r.querySelectorAll = () => r.children.filter((n) => "data-ie" in n.attributes); r.querySelector = (q) => r.querySelectorAll(q)[0] || null; } } });
   const card = new Card();
   card.setConfig({ consumers: [{ entity: "sensor.ev", type: "printer_3d", appliance: { show_history: true } }, { entity: "sensor.plug" }] });
   card.hass = hassOf(base);
@@ -269,6 +269,10 @@ const draw = (config, states = base, lang = "en") => {
   check("given the power sensor as state and power", rec && rec.el.cfg.state_entity === "sensor.ev" && rec.el.cfg.power_entity === "sensor.ev", true);
   check("drawing only: no name, no state, no power line", rec && rec.el.cfg.show_name === false && rec.el.cfg.show_state === false && rec.el.cfg.hidden_lines.includes("power"), true);
   check("extra appliance options passed on", rec && rec.el.cfg.show_history, true);
+  const hide = rec && rec.el.shadowRoot && rec.el.shadowRoot.querySelector("style[data-ie]");
+  check("drawing only: its lines, sliders and history hidden", !!hide && /\.info-lines/.test(hide.textContent) && /\.history/.test(hide.textContent), true);
+  card.hass = hassOf({ ...base, "sensor.ev": S(11) });
+  check("the hiding style added once", rec.el.shadowRoot.querySelectorAll("style[data-ie]").length, 1);
   const el = rec.el;
   card.hass = hassOf({ ...base, "sensor.ev": S(10) });
   check("the same element is kept across redraws", card._ac.get("c0").el, el);
