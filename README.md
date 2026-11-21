@@ -98,12 +98,11 @@ consumers:
 | `consumers[].type` | `generic` | Any HA Appliance Card type (`washer`, `printer_3d`, `fridge`, `network`, `ups`...), or `ev_charger`, `heat_pump`, `water_heater`, `generic` without it |
 | `consumers[].appliance` | | Extra HA Appliance Card options for the drawing, such as `state_entity` for a drawing that follows an on/off state |
 | `consumers[].children` | | Consumers fed by this one (one level) |
-| `consumers[].icon` | from the type | Icon in the light style; without it, the type's, then the entity's |
 | `consumers_hide_below` | | Hide the consumers drawing this power or less (W), and the unavailable ones. A consumer that stops stays two minutes, one feeding another at work stays. Empty: all shown |
 | `consumers_layout` | `auto` | `column`, `columns` (two staggered columns, much less tall) or `compact` (smaller drawings, closer together). `auto` takes two columns past three consumers, one column when a consumer feeds others |
 | `panel_peak` | `450` | Peak power of one panel (W), for the glow and the flow speed |
 | `rated_power` | `6000` | Power of the fastest flow (W) |
-| `style` | `drawn` | `drawn`, or `light`: each consumer is a round icon with its name and power, no HA Appliance Card loaded. One column up to eight consumers |
+| `style` | `drawn` | `drawn`, or `light`: each consumer drawn at half size, its name and power beside it, the consumers much closer together. One column up to eight consumers |
 | `max_scale` | `1` | How far the card may grow past its own size, from `0.5` to `1.3` |
 | `flow_style` | `arrows` | `arrows` or `dashes` |
 | `animate` | `true` | Animate the flows |

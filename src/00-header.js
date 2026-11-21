@@ -38,22 +38,13 @@ const IE_BUILTIN_TYPES = ["generic", "ev_charger", "heat_pump", "water_heater"];
 const IE_CONSUMER_TYPES = [...IE_BUILTIN_TYPES, "washer", "dryer", "dishwasher", "fridge", "oven", "cooktop", "microwave", "kettle", "coffee", "printer_3d", "screen", "network", "ups", "air_conditioner", "space_heater", "dehumidifier", "pool_pump", "spa", "robot", "lamp"];
 const IE_METERS = ["box", "linky", "dome"];
 const IE_CONSUMER_LAYOUTS = ["auto", "column", "columns", "compact"];
-// "drawn": the consumers as drawings; "light": as round icons, name and
-// power beside them, and no HA Appliance Card loaded.
+// "drawn": the consumers drawn full size; "light": drawn at half size,
+// their name and power beside them, closer together.
 const IE_STYLES = ["drawn", "light"];
 // How far the stage may grow past its own size (max_scale).
 const IE_SCALE_MIN = 0.5;
 const IE_SCALE_MAX = 1.3;
 const IE_SCALE_DEFAULT = 1;
-// The icon of a consumer in the light style, by type.
-const IE_TYPE_ICONS = {
-  generic: "mdi:power-plug", ev_charger: "mdi:ev-station", heat_pump: "mdi:heat-pump", water_heater: "mdi:water-boiler",
-  washer: "mdi:washing-machine", dryer: "mdi:tumble-dryer", dishwasher: "mdi:dishwasher", fridge: "mdi:fridge",
-  oven: "mdi:stove", cooktop: "mdi:gas-burner", microwave: "mdi:microwave", kettle: "mdi:kettle", coffee: "mdi:coffee-maker",
-  printer_3d: "mdi:printer-3d", screen: "mdi:television", network: "mdi:server-network", ups: "mdi:power-plug-battery",
-  air_conditioner: "mdi:air-conditioner", space_heater: "mdi:radiator", dehumidifier: "mdi:air-humidifier",
-  pool_pump: "mdi:pump", spa: "mdi:hot-tub", robot: "mdi:robot-vacuum", lamp: "mdi:lamp", hrv: "mdi:hvac", drying_rack: "mdi:hanger",
-};
 const IE_SOLAR_VIEWS = ["panel", "string", "total"];
 const IE_MAX_STRINGS = 6;
 const IE_MAX_CONSUMERS = 30;

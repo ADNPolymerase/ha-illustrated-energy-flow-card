@@ -16,7 +16,7 @@ const IE_CSS = `
   .ie-lbl.nm { font-size: 13px; font-weight: 500; }
   .ie-pw { font-size: 10px; font-weight: 600; fill: #fff; paint-order: stroke fill; stroke: #16304f; stroke-width: 2.5px; stroke-linejoin: round; }
   .node { position: absolute; width: 130px; text-align: center; color: var(--primary-text-color, #1f262e); }
-  .node .machine { position: relative; width: 96px; height: 108px; margin: 0 auto; }
+  .node .machine, .lk .machine { position: relative; width: 96px; height: 108px; margin: 0 auto; }
   .node .nm { font-size: 13px; margin-top: 2px; line-height: 1.25; }
   .node .vl { font-size: 15px; font-weight: 600; line-height: 1.3; }
   .node .sb { font-size: 12px; color: var(--secondary-text-color, #6b7684); line-height: 1.25; }
@@ -26,18 +26,19 @@ const IE_CSS = `
   svg.ie-e { position: absolute; left: 0; top: 0; width: 96px; height: 108px; overflow: visible; }
   .ie-plug-ring { stroke: #b8bfc6; }
   .ie-plug.on .ie-plug-ring { stroke: #42a5f5; filter: drop-shadow(0 0 2px #42a5f5); }
-  .node .ie-ac { position: relative; width: 130px; height: 108px; margin: 0 auto; }
+  .node .ie-ac, .lk .ie-ac { position: relative; width: 130px; height: 108px; margin: 0 auto; }
   /* HA Appliance Card draws its picture 16 px down and 17 px in: lifted so it
      sits where the other drawings sit. */
-  .node .ie-ac > ha-appliance-card { position: absolute; left: 0; top: -16px; width: 130px; }
+  .node .ie-ac > ha-appliance-card, .lk .ie-ac > ha-appliance-card { position: absolute; left: 0; top: -16px; width: 130px; }
   /* Compact consumers: the drawing at three quarters, its labels unchanged. */
   .node.cmp > .machine, .node.cmp > .ie-ac { transform: scale(.75); transform-origin: 50% 0; margin-bottom: -27px; }
-  /* Light style: a round icon, its name and power on its right. */
-  .lnode { position: absolute; display: flex; align-items: center; gap: 8px; width: 182px; height: 44px; color: var(--primary-text-color, #1f262e); }
-  .lnode .lc { flex: none; box-sizing: border-box; width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--divider-color, #c9d0d6); display: flex; align-items: center; justify-content: center; color: var(--secondary-text-color, #6b7684); background: var(--card-background-color, var(--ha-card-background, #fff)); --mdc-icon-size: 24px; }
-  .lnode.on .lc { border-color: ${IE_COLORS.load}; color: ${IE_COLORS.load}; }
+  /* Light style: the drawing at half size (a 130 x 108 box), the name and
+     power on its right. */
+  .lnode { position: absolute; display: flex; align-items: center; gap: 8px; width: 200px; height: 54px; color: var(--primary-text-color, #1f262e); }
+  .lnode .lc { flex: none; position: relative; width: 65px; height: 54px; }
+  .lnode .lk { position: absolute; left: 0; top: 0; width: 130px; height: 108px; transform: scale(.5); transform-origin: 0 0; }
   .lnode .lt { min-width: 0; text-align: left; }
-  .lnode .nm { font-size: 12px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 128px; }
+  .lnode .nm { font-size: 12px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 122px; }
   .lnode .vl { font-size: 14px; font-weight: 600; line-height: 1.25; }
   @media (prefers-reduced-motion: reduce) { .stage * { animation: none !important; } }
 `;

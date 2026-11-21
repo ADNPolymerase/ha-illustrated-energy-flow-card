@@ -282,25 +282,24 @@ const draw = (config, states = base, lang = "en") => {
   check("the element gets hass even when the card does not redraw", el.hass, quiet);
 }
 
-// ── Light style: round icons, no HA Appliance Card ───────────────────────────
+// ── Light style: half-size drawings, name and power beside them ─────────────
 {
-  const states = { ...base, "sensor.nas": { state: "28", attributes: { unit_of_measurement: "W", icon: "mdi:nas" } } };
-  const light = { ...cfg, style: "light", consumers: [{ entity: "sensor.ev", type: "cooktop", name: "Hob" }, { entity: "sensor.plug", icon: "mdi:fan" }, { entity: "sensor.nas" }] };
+  const states = { ...base, "sensor.nas": S(28) };
+  const light = { ...cfg, style: "light", consumers: [{ entity: "sensor.ev", type: "cooktop", name: "Hob" }, { entity: "sensor.plug" }, { entity: "sensor.nas", type: "heat_pump" }] };
   const card = new Card();
   card.setConfig(light);
   card.hass = hassOf(states);
   const html = card._wrap.innerHTML;
-  check("light: no HA Appliance Card placeholder, even when installed", html.includes("ie-ac") || html.includes("ie-plug"), false);
-  contains("light: a round icon per consumer", html, 'class="lnode on hit"');
-  contains("light: the type gives the icon", html, 'icon="mdi:gas-burner"');
-  contains("light: the config icon wins", html, 'icon="mdi:fan"');
-  contains("light: a generic consumer takes its entity's icon", html, 'icon="mdi:nas"');
-  check("light: name and power beside the icon", /<div class="nm">Hob<\/div><div class="vl">[^<]*3[^<]*<\/div>/.test(html), true);
+  contains("light: a half-size box per consumer", html, '<div class="lc"><div class="lk">');
+  check("light: HA Appliance Card still draws it", html.includes('<div class="lk"><div class="ie-ac" data-ac="c0">') && !!(card._ac && card._ac.get("c0")), true);
+  contains("light: the built-in plug drawing too", html, '<div class="lk"><div class="machine ie-plug');
+  check("light: no full-size node for a consumer", /class="node[^"]*" data-entity="sensor\.(ev|plug|nas)"/.test(html), false);
+  check("light: name and power beside the drawing", /<div class="nm">Hob<\/div><div class="vl">[^<]*3[^<]*<\/div>/.test(html), true);
   check("light: an idle consumer is dimmed", /class="lnode dim hit" data-entity="sensor.plug"/.test(html), true);
   const lay = (c) => Card.computeLayout(Card.computeModel(hassOf(states), c), c);
   const L = lay(light);
-  check("light: one column, a short step", L.cmode === "column" && L.consumers[1].y - L.consumers[0].y, 58);
-  check("light: the stage widens for the names", L.width, 560 + 70);
+  check("light: one column, a short step", L.cmode === "column" && L.consumers[1].y - L.consumers[0].y, 66);
+  check("light: the stage widens for the names", L.width, 560 + 80);
   const many = (n, extra) => ({ ...light, ...extra, consumers: Array.from({ length: n }, () => ({ entity: "sensor.plug" })) });
   check("light: auto keeps one column up to eight", lay(many(8)).cmode, "column");
   check("light: two columns past eight", lay(many(9)).cmode, "columns");

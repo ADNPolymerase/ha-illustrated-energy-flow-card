@@ -12,13 +12,14 @@ const IE_STAGGER = 95;
 // Smaller consumer drawings, closer together.
 const IE_COMPACT_K = 0.75;
 const IE_COMPACT_STEP = 130;
-// The light style: a round icon 44 px high, its name and power on its right.
-const IE_LIGHT_STEP = 58;
-const IE_LIGHT_STAGGER = 34;
-const IE_LIGHT_COL2_W = 180;
+// The light style: each drawing at half size, its name and power on its
+// right, the consumers much closer together.
+const IE_LIGHT_STEP = 66;
+const IE_LIGHT_STAGGER = 37;
+const IE_LIGHT_COL2_W = 196;
 const IE_LIGHT_HALF = 52;
-const IE_LIGHT_RIGHT = 130;
-const IE_LIGHT_EXTRA = 70;
+const IE_LIGHT_RIGHT = 148;
+const IE_LIGHT_EXTRA = 80;
 const IE_LIGHT_AUTO_MAX = 8;
 
 let IE_DRAW = null;
@@ -41,7 +42,7 @@ function ieLayout(model, cfg) {
   const ox = pylon ? IE_PYLON_W : 0;
   // Past three consumers the column gets tall: two staggered columns then,
   // unless a consumer feeds others (their column already takes that place).
-  // Light icons are small: one column holds more of them, and compact is
+  // Light drawings are small: one column holds more of them, and compact is
   // what they already are.
   const light = ieStyle(c) === "light";
   const askLayout = IE_CONSUMER_LAYOUTS.includes(c.consumers_layout) ? c.consumers_layout : "auto";
@@ -134,7 +135,7 @@ function ieLayout(model, cfg) {
   }
 
   // How far a consumer's drawing reaches: its left edge, its bottom.
-  const cBottom = light ? 26 : cmode === "compact" ? 82 : 112;
+  const cBottom = light ? 30 : cmode === "compact" ? 82 : 112;
   L.consumerHalf = light ? IE_LIGHT_HALF : cmode === "compact" ? 40 : 54;
   L.consumerRight = light ? IE_LIGHT_RIGHT : L.consumerHalf - 2;
   const bottoms = [by + 52];
@@ -464,7 +465,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       if (p.col) {
         // Into the second column: under the first column's drawing above,
         // across, then up to the consumer.
-        // Light icons leave a free band level with the second column's own.
+        // Light drawings leave a free band level with the second column's own.
         const x0 = p.x - (L.light ? IE_LIGHT_COL2_W : IE_COL2_W), gy = p.y + (L.light ? 0 : 19);
         spec = L.light
           ? ieChain(ieCubic(a.x, a.y, a.x + 46, a.y, x0 - 116, gy, x0 - 70, gy), ieLine(x0 - 70, gy, b.x, b.y))
@@ -515,13 +516,12 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     // card draws it on its own page; otherwise by the drawings copied here.
     const acReady = typeof customElements !== "undefined" && !!customElements.get("ha-appliance-card");
     const wantAc = [];
-    const lightNode = (pos, cm) => {
-      const on = cm.w !== null && cm.w > IE_ON_W;
+    // Light: the same drawing at half size, the name and power beside it.
+    const lightNode = (pos, cm, html, on) => {
       const click = cm.entity && c.clickable !== false;
-      return `<div class="lnode${on ? " on" : ""}${dimOn && !on ? " dim" : ""}${click ? " hit" : ""}"${click ? ` data-entity="${esc(cm.entity)}"` : ""} style="left:${f1(pos.x - IE_LIGHT_HALF)}px;top:${f1(pos.y - 22)}px"><div class="lc"><ha-icon icon="${esc(cm.icon || IE_TYPE_ICONS.generic)}"></ha-icon></div><div class="lt"><div class="nm">${esc(cm.name || t(cm.type))}</div><div class="vl">${esc(cm.w === null ? t("unavailable") : fmt(cm.w))}</div></div></div>`;
+      return `<div class="lnode${dimOn && !on ? " dim" : ""}${click ? " hit" : ""}"${click ? ` data-entity="${esc(cm.entity)}"` : ""} style="left:${f1(pos.x - IE_LIGHT_HALF)}px;top:${f1(pos.y - 27)}px"><div class="lc"><div class="lk">${html}</div></div><div class="lt"><div class="nm">${esc(cm.name || t(cm.type))}</div><div class="vl">${esc(cm.w === null ? t("unavailable") : fmt(cm.w))}</div></div></div>`;
     };
     const consumerNode = (pos, cm, key) => {
-      if (L.light) return lightNode(pos, cm);
       const on = cm.w !== null && cm.w > IE_ON_W;
       let html;
       if (cm.type !== "generic" && acReady) {
@@ -531,6 +531,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       else if (cm.type === "heat_pump") html = D.hp.draw("", { hpMode: on ? "space_heating" : "idle", noTank: true });
       else if (cm.type === "water_heater") html = D.wh.draw(on ? "heating" : "", { tankTemp: on ? 55 : 40 });
       else html = iePlugHtml(on);
+      if (L.light) return lightNode(pos, cm, html, on);
       return node(pos, html, cm.name || t(cm.type), fmt(cm.w), cm.w === null ? t("unavailable") : "", cm.entity, !on, L.cmode === "compact");
     };
     L.consumers.forEach((p, i) => {
@@ -538,7 +539,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       nodes += consumerNode(p, cm, cm.key);
       p.children.forEach((q, j) => { nodes += consumerNode(q, cm.children[j], cm.children[j].key); });
     });
-    if (!L.light && !acReady && m.consumers.some((k) => k.type !== "generic" || k.children.some((x) => x.type !== "generic")) && !this._acWait && typeof customElements !== "undefined" && customElements.whenDefined) {
+    if (!acReady && m.consumers.some((k) => k.type !== "generic" || k.children.some((x) => x.type !== "generic")) && !this._acWait && typeof customElements !== "undefined" && customElements.whenDefined) {
       this._acWait = true;
       customElements.whenDefined("ha-appliance-card").then(() => { this._sig = null; if (this._hass) this._render(); });
     }
