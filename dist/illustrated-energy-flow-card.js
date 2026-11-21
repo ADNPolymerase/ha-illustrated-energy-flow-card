@@ -2381,9 +2381,35 @@ class IllustratedEnergyFlowCardEditor extends HTMLElement {
       strings: Math.max(0, Math.min(IE_MAX_STRINGS, Number(value.strings_count) || 0)),
       consumers: Math.max(0, Math.min(IE_MAX_CONSUMERS, Number(value.consumers_count) || 0)),
     };
-    const countsMoved = !this._counts || counts.strings !== this._counts.strings || counts.consumers !== this._counts.consumers;
+    const was = this._counts || ieCounts(this._config);
+    const countsMoved = counts.strings !== was.strings || counts.consumers !== was.consumers;
+    // The count field changes on every key: going from 9 to 10 passes
+    // through 1 (or 0 when the 9 is erased first). What a lower count
+    // drops is kept here, and comes back when the count rises again.
+    if (counts.consumers < was.consumers && (!this._stashC || ieCounts(this._config).consumers >= ieCounts(this._stashC).consumers)) this._stashC = this._config;
+    if (counts.strings < was.strings && (!this._stashS || ieCounts(this._config).strings >= ieCounts(this._stashS).strings)) this._stashS = this._config;
+    const back = (stash, from, to, prefix, fields, keys) => {
+      if (!stash || to <= from) return;
+      const sd = ieToForm(stash, { strings: IE_MAX_STRINGS, consumers: IE_MAX_CONSUMERS });
+      for (let i = from + 1; i <= to; i++) {
+        const none = (o) => keys.every((f) => { const v = o[`${prefix}${i}_${f}`]; return v === undefined || v === "" || (Array.isArray(v) && !v.length); });
+        if (!none(value) || none(sd)) continue;
+        for (const f of fields) value[`${prefix}${i}_${f}`] = sd[`${prefix}${i}_${f}`];
+      }
+    };
+    back(this._stashC, was.consumers, counts.consumers, "c", ["entity", "type", "name", "fed", "appliance"], ["entity"]);
+    back(this._stashS, was.strings, counts.strings, "s", ["name", "power", "panels"], ["name", "power", "panels"]);
     this._counts = counts;
-    const next = ieFromForm(value, this._config);
+    // A string brought back keeps its named panels.
+    let prev = this._config;
+    const oldS = ((prev && prev.solar) || {}).strings || [];
+    const stS = ((this._stashS && this._stashS.solar) || {}).strings || [];
+    if (counts.strings > oldS.length && stS.length > oldS.length) {
+      const strings = [...oldS];
+      for (let i = oldS.length; i < Math.min(counts.strings, stS.length); i++) strings.push(stS[i]);
+      prev = { ...prev, solar: { ...(prev.solar || {}), strings } };
+    }
+    const next = ieFromForm(value, prev);
     if (ieSame(next, this._config)) {
       // A new count adds empty sections to fill; the config waits for them.
       if (countsMoved) this._render();

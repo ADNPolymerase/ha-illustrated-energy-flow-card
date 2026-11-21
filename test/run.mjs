@@ -584,6 +584,40 @@ const draw = (config, states = base, lang = "en") => {
   contains("printer: drawn at half size in the light style", light._wrap.innerHTML, '<div class="lk"><div class="ie-ac ie-pc" data-ac="c0">');
 }
 
+// ── Editor: typing a new count does not lose consumers ───────────────────────
+{
+  const sortK = (o) => Array.isArray(o) ? o.map(sortK) : o && typeof o === "object" ? Object.fromEntries(Object.keys(o).sort().map((k) => [k, sortK(o[k])])) : o;
+  const ieSameT = (a, b) => JSON.stringify(sortK(a)) === JSON.stringify(sortK(b));
+  const start = {
+    solar: { strings: [{ name: "Roof", panels: [{ entity: "sensor.p1", name: "East" }, "sensor.p2"], power_entity: "sensor.s1" }] },
+    consumers: [{ entity: "sensor.ev", type: "ev_charger", name: "Car", children: [{ entity: "sensor.box", name: "Box" }] }, { entity: "sensor.oven", type: "oven", appliance: { foo: 1 } }],
+  };
+  const ed = new Editor();
+  ed.hass = hassOf(base);
+  ed.setConfig(start);
+  // What the form sends back as the count field is edited key by key.
+  const type = (count, strings) => {
+    const v = Editor.toForm(ed._config, ed._counts);
+    if (count !== undefined) v.consumers_count = count;
+    if (strings !== undefined) v.strings_count = strings;
+    ed._changed({ stopPropagation() {}, detail: { value: v } });
+  };
+  type(undefined); type(1); type(4);
+  check("count typed 3 -> (erased) -> 1 -> 4: consumers back", JSON.stringify(ed._config.consumers), JSON.stringify(start.consumers));
+  check("count typed: the new slot is free", ed._counts.consumers, 4);
+  const v4 = Editor.toForm(ed._config, ed._counts); v4.c4_entity = "sensor.new";
+  ed._changed({ stopPropagation() {}, detail: { value: v4 } });
+  check("count typed: the new consumer added after the others", ed._config.consumers.map((x) => x.entity).join(), "sensor.ev,sensor.oven,sensor.new");
+  type(undefined, 0); type(undefined, 2);
+  check("strings come back when the count rises again", ieSameT(ed._config.solar.strings, start.solar.strings), true);
+  type(1); type(0); type(2);
+  check("a second drop keeps the longest list", ed._config.consumers.map((x) => [x.entity, ...(x.children || []).map((k) => k.entity)].join("+")).join(), "sensor.ev+sensor.box");
+  type(4);
+  check("raised again: all back", ed._config.consumers.map((x) => x.entity).join(), "sensor.ev,sensor.oven,sensor.new");
+  type(2);
+  check("a lower count kept still removes", ed._config.consumers.map((x) => x.entity).join(), "sensor.ev");
+}
+
 // ── Stub config ──────────────────────────────────────────────────────────────
 {
   const stub = Card.getStubConfig(hassOf({ "sensor.grid_power": S(10), "sensor.solar_power": S(10), "sensor.battery_power": S(1), "sensor.battery_level": S(50, "%") }));
