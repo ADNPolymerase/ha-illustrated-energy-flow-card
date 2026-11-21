@@ -81,7 +81,7 @@ consumers:
 | `grid.meter` | `box` | `box`, `linky` or `dome` |
 | `grid.pylon` | `false` | Draw a utility pylon in front of the meter |
 | `solar.strings` | | List of strings: `name`, `panels` (entity ids or `{entity, name}`), `power_entity` |
-| `solar.power_entity` | sum of strings | Total solar power |
+| `solar.power_entity` | sum of strings | Total solar power, shown under the inverter, or above the house with microinverters |
 | `solar.view` | `panel` | `panel`, `string` or `total` |
 | `solar.microinverters` | `false` | `true`: one microinverter under each panel, no central inverter. `string`: one under each string, for the dual and quad ones (APsystems DS3, Hoymiles HM-800) |
 | `solar.optimizers` | `false` | One optimiser under each panel |

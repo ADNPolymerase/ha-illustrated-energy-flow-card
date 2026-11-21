@@ -618,6 +618,21 @@ const draw = (config, states = base, lang = "en") => {
   check("a lower count kept still removes", ed._config.consumers.map((x) => x.entity).join(), "sensor.ev");
 }
 
+// ── Solar total without a central inverter ───────────────────────────────────
+{
+  const st = { ...base, "sensor.a": S(212), "sensor.b": S(205), "sensor.sum": S(709) };
+  const strs = [{ name: "A", panels: ["sensor.a"] }, { name: "B", panels: ["sensor.b"] }];
+  const draw = (solar) => { const k = new Card(); k.setConfig({ solar, grid: { power_entity: "sensor.grid" } }); k.hass = hassOf(st); return k._wrap.innerHTML; };
+  const svgOf = (h) => h.replace(/<[^>]+>/g, "|");
+  const micro = svgOf(draw({ microinverters: "string", strings: strs }));
+  check("microinverters: the solar total drawn above the house", /\|Solar 417\sW\|/.test(micro), true);
+  check("microinverters: the total reads solar.power_entity", /\|Solar 709\sW\|/.test(svgOf(draw({ microinverters: "string", power_entity: "sensor.sum", strings: strs }))), true);
+  check("central inverter: no extra total (the inverter shows it)", /\|Solar \d/.test(svgOf(draw({ strings: strs }))), false);
+  const off = { ...st, "sensor.a": S(0), "sensor.b": S(0) };
+  const k0 = new Card(); k0.setConfig({ solar: { microinverters: true, strings: strs } }); k0.hass = hassOf(off);
+  check("microinverters at night: no total", /\|Solar \d/.test(svgOf(k0._wrap.innerHTML)), false);
+}
+
 // ── Stub config ──────────────────────────────────────────────────────────────
 {
   const stub = Card.getStubConfig(hassOf({ "sensor.grid_power": S(10), "sensor.solar_power": S(10), "sensor.battery_power": S(1), "sensor.battery_level": S(50, "%") }));

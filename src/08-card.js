@@ -433,6 +433,9 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       svg += ieFlow(spec, g.w, IE_COLORS.solar, peak * Math.max(1, g.drawn), fo);
     });
     if (G && L.view === "total") svg += lbl(L.house.x, L.py - 10, `${t("solar")} · ${fmt(m.pv)}`);
+    // Without a central inverter (microinverters), the total sits where the
+    // flows meet, above the house, like the import on the grid side.
+    else if (G && !L.inv && m.pv !== null && m.pv >= 1) svg += lbl(L.house.x - 12, invTop - 4, `${t("solar")} ${fmt(m.pv)}`, "", "end");
 
     if (L.inv) {
       const invOn = m.invOut !== null && m.invOut > 1;

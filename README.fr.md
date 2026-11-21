@@ -81,7 +81,7 @@ consumers:
 | `grid.meter` | `box` | `box`, `linky` ou `dome` |
 | `grid.pylon` | `false` | Dessiner un pylône électrique devant le compteur |
 | `solar.strings` | | Liste des strings : `name`, `panels` (entités ou `{entity, name}`), `power_entity` |
-| `solar.power_entity` | somme des strings | Puissance solaire totale |
+| `solar.power_entity` | somme des strings | Puissance solaire totale, affichée sous l'onduleur, ou au-dessus de la maison avec des micro-onduleurs |
 | `solar.view` | `panel` | `panel`, `string` ou `total` |
 | `solar.microinverters` | `false` | `true` : un micro-onduleur sous chaque panneau, pas d'onduleur central. `string` : un sous chaque string, pour les doubles et quadruples (APsystems DS3, Hoymiles HM-800) |
 | `solar.optimizers` | `false` | Un optimiseur sous chaque panneau |
