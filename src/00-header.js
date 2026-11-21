@@ -3,7 +3,7 @@
 // panel, string by string or as a total.
 // https://github.com/ADNPolymerase/ha-illustrated-energy-flow-card
 
-const IE_VERSION = "0.4.0";
+const IE_VERSION = "0.5.0";
 const IE_TAG = "illustrated-energy-flow-card";
 const IE_EDITOR_TAG = "illustrated-energy-flow-card-editor";
 
