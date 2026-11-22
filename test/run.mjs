@@ -618,6 +618,42 @@ const draw = (config, states = base, lang = "en") => {
   check("a lower count kept still removes", ed._config.consumers.map((x) => x.entity).join(), "sensor.ev");
 }
 
+// ── Wrap: the rest of the consumers under the grid and the house ─────────────
+{
+  const st = { "sensor.grid": S(300) };
+  for (let i = 0; i < 11; i++) st[`sensor.w${i}`] = S(i === 3 ? 230 : 0);
+  const conf = (extra, n = 11) => ({ grid: { power_entity: "sensor.grid" }, ...extra, consumers: Array.from({ length: n }, (_, i) => ({ entity: `sensor.w${i}` })) });
+  const lay = (c) => Card.computeLayout(Card.computeModel(hassOf(st), c), c);
+  const cols = lay(conf({ consumers_layout: "columns" }));
+  const wr = lay(conf({ consumers_layout: "wrap" }));
+  const rows = wr.consumers.filter((p) => p.row);
+  check("wrap: some consumers go in rows", rows.length > 0 && rows.length < 11, true);
+  check("wrap: much less tall than two columns", wr.height < cols.height * 0.75, true);
+  check("wrap: the rows and their lane stand under the grid", rows.every((p) => p.y - 54 - 12 >= wr.grid.y + 112 + 6), true);
+  check("wrap: the rows stay left of the trunk", rows.every((p) => p.x + 65 < wr.trunkX), true);
+  check("wrap: three per row", new Set(rows.slice(0, 3).map((p) => p.y)).size === 1 && rows.length > 3 ? rows[3].y > rows[0].y : true, true);
+  check("wrap: the order is kept, columns first", wr.consumers.findIndex((p) => p.row), wr.consumers.length - rows.length);
+  check("wrap: as wide as two columns", wr.width, cols.width);
+  const lw = lay(conf({ consumers_layout: "wrap", style: "light" }));
+  check("wrap light: two per row, less tall than light columns", lw.consumers.some((p) => p.row) && lw.height < lay(conf({ consumers_layout: "columns", style: "light" })).height, true);
+  const ch = conf({ consumers_layout: "wrap" }); ch.consumers[0].children = [{ entity: "sensor.w9" }];
+  check("wrap with a chain: back to auto, no rows", lay(ch).consumers.some((p) => p.row), false);
+  check("wrap with one consumer: no rows", lay(conf({ consumers_layout: "wrap" }, 1)).consumers.some((p) => p.row), false);
+  const k = new Card(); k.setConfig(conf({ consumers_layout: "wrap" })); k.hass = hassOf(st);
+  const r0 = rows[0];
+  const h = k._wrap.innerHTML, f = (v) => String(Math.round(v * 10) / 10);
+  contains("wrap: a row consumer fed from above", h, `${f(r0.x)} ${f(r0.y - 56)}`);
+  const o = { x: wr.house.right + 3, y: wr.house.by - 30 };
+  const starts = (h.match(/path="M [^ ]+ [^ ]+/g) || []).filter((m) => m.startsWith(`path="M ${f(o.x)} ${f(o.y)}`));
+  check("wrap: every consumer flow leaves the house at one point", starts.length >= 11, true);
+  contains("wrap: the line runs down the trunk", h, `${f(wr.trunkX)} ${f(o.y + 14)}`);
+  const up = wr.consumers.find((p) => !p.row && p.y < o.y - 28);
+  if (up) contains("wrap: the trunk goes up to a higher consumer", h, `${f(wr.trunkX)} ${f(o.y - 14)}`);
+  const sch = JSON.stringify(Editor.schema(hassOf(st), "en", Editor.toForm({})));
+  check("editor: wrap offered", sch.includes('{"value":"wrap","label":"Fill the empty space"}'), true);
+  check("editor: wrap written", Editor.fromForm({ ...Editor.toForm({}), consumers_layout: "wrap" }, {}).consumers_layout, "wrap");
+}
+
 // ── Solar total without a central inverter ───────────────────────────────────
 {
   const st = { ...base, "sensor.a": S(212), "sensor.b": S(205), "sensor.sum": S(709) };

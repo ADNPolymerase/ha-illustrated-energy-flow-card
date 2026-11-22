@@ -44,7 +44,7 @@ const IE_PRINTER_TYPE = "printer";
 // Power above which a printer drawn from its plug alone is printing (W).
 const IE_PRINTING_W = 50;
 const IE_METERS = ["box", "linky", "dome"];
-const IE_CONSUMER_LAYOUTS = ["auto", "column", "columns", "compact"];
+const IE_CONSUMER_LAYOUTS = ["auto", "column", "columns", "compact", "wrap"];
 // "drawn": the consumers drawn full size; "light": drawn at half size,
 // their name and power beside them, closer together.
 const IE_STYLES = ["drawn", "light"];
@@ -96,7 +96,7 @@ const IE_I18N = {
     e_battery_soc: "State of charge (%)", e_battery_reserve: "Reserve (%)",
     e_home: "Home", e_home_power: "Home power (optional, computed otherwise)",
     e_consumer: "Consumer {n}", e_entity: "Power sensor", e_type: "Drawing",
-    printer: "Printer", filament_dryer: "Filament dryer", drying_rack: "Wall drying rack", e_type_nopc: "Type (drawn as a plug: install HA Printer Card)", washer: "Washing machine", dryer: "Dryer", dishwasher: "Dishwasher", fridge: "Fridge", oven: "Oven", cooktop: "Cooktop", microwave: "Microwave", kettle: "Kettle", coffee: "Coffee machine", printer_3d: "3D printer", screen: "Screen", network: "Network", ups: "UPS", air_conditioner: "Air conditioner", space_heater: "Heater", dehumidifier: "Dehumidifier", pool_pump: "Pool pump", spa: "Spa", robot: "Robot", lamp: "Lamp", e_strings_count: "Number of strings", e_consumers: "Consumers", e_consumers_count: "Number of consumers", e_fed_by: "Fed by", e_none: "The home", e_pylon: "Draw the grid pylon", e_coupling: "Battery connected to", e_coupling_home: "The home (AC)", e_coupling_inverter: "The inverter (DC, hybrid)", e_appliance: "HA Appliance Card options (YAML)", e_layout: "Layout", e_layout_auto: "Automatic", e_layout_column: "One column", e_layout_columns: "Two columns", e_layout_compact: "Compact",
+    printer: "Printer", filament_dryer: "Filament dryer", drying_rack: "Wall drying rack", e_type_nopc: "Type (drawn as a plug: install HA Printer Card)", washer: "Washing machine", dryer: "Dryer", dishwasher: "Dishwasher", fridge: "Fridge", oven: "Oven", cooktop: "Cooktop", microwave: "Microwave", kettle: "Kettle", coffee: "Coffee machine", printer_3d: "3D printer", screen: "Screen", network: "Network", ups: "UPS", air_conditioner: "Air conditioner", space_heater: "Heater", dehumidifier: "Dehumidifier", pool_pump: "Pool pump", spa: "Spa", robot: "Robot", lamp: "Lamp", e_strings_count: "Number of strings", e_consumers: "Consumers", e_consumers_count: "Number of consumers", e_fed_by: "Fed by", e_none: "The home", e_pylon: "Draw the grid pylon", e_coupling: "Battery connected to", e_coupling_home: "The home (AC)", e_coupling_inverter: "The inverter (DC, hybrid)", e_appliance: "HA Appliance Card options (YAML)", e_layout: "Layout", e_layout_auto: "Automatic", e_layout_column: "One column", e_layout_columns: "Two columns", e_layout_compact: "Compact", e_layout_wrap: "Fill the empty space",
     e_panel_device: "Electronics under each panel", e_pd_none: "None", e_pd_micro: "Microinverters (no central inverter)", e_pd_optim: "Optimisers (with the inverter)", e_pd_micro_string: "One microinverter per string (2 or 4 panels)", e_battery_reserve_entity: "Reserve from an entity (replaces the value)", e_hide_below: "Hide consumers below (W, empty = show all)", e_type_noac: "Type (drawn as a plug: install HA Appliance Card)", e_style: "Style", e_style_drawn: "Drawn", e_style_light: "Light (small drawings)", e_max_scale: "Maximum zoom",
     auto: "Automatic",
   },
@@ -122,7 +122,7 @@ const IE_I18N = {
     e_battery_soc: "Niveau de charge (%)", e_battery_reserve: "Réserve (%)",
     e_home: "Maison", e_home_power: "Puissance de la maison (facultatif, calculée sinon)",
     e_consumer: "Consommateur {n}", e_entity: "Capteur de puissance", e_type: "Dessin",
-    printer: "Imprimante", filament_dryer: "Sécheur de filament", drying_rack: "Séchoir mural", e_type_nopc: "Type (dessiné en prise : installez HA Printer Card)", washer: "Lave-linge", dryer: "Sèche-linge", dishwasher: "Lave-vaisselle", fridge: "Réfrigérateur", oven: "Four", cooktop: "Plaque de cuisson", microwave: "Micro-ondes", kettle: "Bouilloire", coffee: "Machine à café", printer_3d: "Imprimante 3D", screen: "Écran", network: "Réseau informatique", ups: "Onduleur de secours", air_conditioner: "Climatiseur", space_heater: "Radiateur", dehumidifier: "Déshumidificateur", pool_pump: "Pompe de piscine", spa: "Spa", robot: "Robot", lamp: "Lampe", e_strings_count: "Nombre de strings", e_consumers: "Consommateurs", e_consumers_count: "Nombre de consommateurs", e_fed_by: "Alimenté par", e_none: "La maison", e_pylon: "Dessiner le pylône du réseau", e_coupling: "Batterie reliée à", e_coupling_home: "La maison (AC)", e_coupling_inverter: "L'onduleur (DC, hybride)", e_appliance: "Options HA Appliance Card (YAML)", e_layout: "Disposition", e_layout_auto: "Automatique", e_layout_column: "Une colonne", e_layout_columns: "Deux colonnes", e_layout_compact: "Compacte",
+    printer: "Imprimante", filament_dryer: "Sécheur de filament", drying_rack: "Séchoir mural", e_type_nopc: "Type (dessiné en prise : installez HA Printer Card)", washer: "Lave-linge", dryer: "Sèche-linge", dishwasher: "Lave-vaisselle", fridge: "Réfrigérateur", oven: "Four", cooktop: "Plaque de cuisson", microwave: "Micro-ondes", kettle: "Bouilloire", coffee: "Machine à café", printer_3d: "Imprimante 3D", screen: "Écran", network: "Réseau informatique", ups: "Onduleur de secours", air_conditioner: "Climatiseur", space_heater: "Radiateur", dehumidifier: "Déshumidificateur", pool_pump: "Pompe de piscine", spa: "Spa", robot: "Robot", lamp: "Lampe", e_strings_count: "Nombre de strings", e_consumers: "Consommateurs", e_consumers_count: "Nombre de consommateurs", e_fed_by: "Alimenté par", e_none: "La maison", e_pylon: "Dessiner le pylône du réseau", e_coupling: "Batterie reliée à", e_coupling_home: "La maison (AC)", e_coupling_inverter: "L'onduleur (DC, hybride)", e_appliance: "Options HA Appliance Card (YAML)", e_layout: "Disposition", e_layout_auto: "Automatique", e_layout_column: "Une colonne", e_layout_columns: "Deux colonnes", e_layout_compact: "Compacte", e_layout_wrap: "Remplir le vide",
     e_panel_device: "Électronique sous chaque panneau", e_pd_none: "Aucune", e_pd_micro: "Micro-onduleurs (pas d'onduleur central)", e_pd_optim: "Optimiseurs (avec l'onduleur)", e_pd_micro_string: "Un micro-onduleur par string (2 ou 4 panneaux)", e_battery_reserve_entity: "Réserve lue sur une entité (remplace la valeur)", e_hide_below: "Masquer les consommateurs sous (W, vide = tous)", e_type_noac: "Type (dessiné en prise : installez HA Appliance Card)", e_style: "Style", e_style_drawn: "Dessiné", e_style_light: "Allégé (petits dessins)", e_max_scale: "Zoom maximal",
     auto: "Automatique",
   },
@@ -148,7 +148,7 @@ const IE_I18N = {
     e_battery_soc: "Ladezustand (%)", e_battery_reserve: "Reserve (%)",
     e_home: "Haus", e_home_power: "Hausverbrauch (optional, sonst berechnet)",
     e_consumer: "Verbraucher {n}", e_entity: "Leistungssensor", e_type: "Zeichnung",
-    printer: "Drucker", filament_dryer: "Filamenttrockner", drying_rack: "Wandwäscheständer", e_type_nopc: "Typ (als Steckdose gezeichnet: HA Printer Card installieren)", washer: "Waschmaschine", dryer: "Trockner", dishwasher: "Geschirrspüler", fridge: "Kühlschrank", oven: "Backofen", cooktop: "Kochfeld", microwave: "Mikrowelle", kettle: "Wasserkocher", coffee: "Kaffeemaschine", printer_3d: "3D-Drucker", screen: "Bildschirm", network: "Netzwerk", ups: "USV", air_conditioner: "Klimaanlage", space_heater: "Heizlüfter", dehumidifier: "Luftentfeuchter", pool_pump: "Poolpumpe", spa: "Whirlpool", robot: "Roboter", lamp: "Lampe", e_strings_count: "Anzahl der Strings", e_consumers: "Verbraucher", e_consumers_count: "Anzahl der Verbraucher", e_fed_by: "Versorgt von", e_none: "Dem Haus", e_pylon: "Strommast zeichnen", e_coupling: "Batterie verbunden mit", e_coupling_home: "Dem Haus (AC)", e_coupling_inverter: "Dem Wechselrichter (DC, Hybrid)", e_appliance: "Optionen der HA Appliance Card (YAML)", e_layout: "Anordnung", e_layout_auto: "Automatisch", e_layout_column: "Eine Spalte", e_layout_columns: "Zwei Spalten", e_layout_compact: "Kompakt",
+    printer: "Drucker", filament_dryer: "Filamenttrockner", drying_rack: "Wandwäscheständer", e_type_nopc: "Typ (als Steckdose gezeichnet: HA Printer Card installieren)", washer: "Waschmaschine", dryer: "Trockner", dishwasher: "Geschirrspüler", fridge: "Kühlschrank", oven: "Backofen", cooktop: "Kochfeld", microwave: "Mikrowelle", kettle: "Wasserkocher", coffee: "Kaffeemaschine", printer_3d: "3D-Drucker", screen: "Bildschirm", network: "Netzwerk", ups: "USV", air_conditioner: "Klimaanlage", space_heater: "Heizlüfter", dehumidifier: "Luftentfeuchter", pool_pump: "Poolpumpe", spa: "Whirlpool", robot: "Roboter", lamp: "Lampe", e_strings_count: "Anzahl der Strings", e_consumers: "Verbraucher", e_consumers_count: "Anzahl der Verbraucher", e_fed_by: "Versorgt von", e_none: "Dem Haus", e_pylon: "Strommast zeichnen", e_coupling: "Batterie verbunden mit", e_coupling_home: "Dem Haus (AC)", e_coupling_inverter: "Dem Wechselrichter (DC, Hybrid)", e_appliance: "Optionen der HA Appliance Card (YAML)", e_layout: "Anordnung", e_layout_auto: "Automatisch", e_layout_column: "Eine Spalte", e_layout_columns: "Zwei Spalten", e_layout_compact: "Kompakt", e_layout_wrap: "Leere Fläche füllen",
     e_panel_device: "Elektronik unter jedem Modul", e_pd_none: "Keine", e_pd_micro: "Mikrowechselrichter (ohne zentralen Wechselrichter)", e_pd_optim: "Optimierer (mit Wechselrichter)", e_pd_micro_string: "Ein Mikrowechselrichter pro String (2 oder 4 Module)", e_battery_reserve_entity: "Reserve aus einer Entität (ersetzt den Wert)", e_hide_below: "Verbraucher ausblenden unter (W, leer = alle)", e_type_noac: "Typ (als Steckdose gezeichnet: HA Appliance Card installieren)", e_style: "Stil", e_style_drawn: "Gezeichnet", e_style_light: "Schlicht (kleine Zeichnungen)", e_max_scale: "Maximaler Zoom",
     auto: "Automatisch",
   },
@@ -174,7 +174,7 @@ const IE_I18N = {
     e_battery_soc: "Nivel de carga (%)", e_battery_reserve: "Reserva (%)",
     e_home: "Casa", e_home_power: "Potencia de la casa (opcional, calculada si no)",
     e_consumer: "Consumidor {n}", e_entity: "Sensor de potencia", e_type: "Dibujo",
-    printer: "Impresora", filament_dryer: "Secador de filamento", drying_rack: "Tendedero de pared", e_type_nopc: "Tipo (dibujado como enchufe: instale HA Printer Card)", washer: "Lavadora", dryer: "Secadora", dishwasher: "Lavavajillas", fridge: "Frigorífico", oven: "Horno", cooktop: "Placa de cocina", microwave: "Microondas", kettle: "Hervidor", coffee: "Cafetera", printer_3d: "Impresora 3D", screen: "Pantalla", network: "Red informática", ups: "SAI", air_conditioner: "Aire acondicionado", space_heater: "Calefactor", dehumidifier: "Deshumidificador", pool_pump: "Bomba de piscina", spa: "Spa", robot: "Robot", lamp: "Lámpara", e_strings_count: "Número de strings", e_consumers: "Consumidores", e_consumers_count: "Número de consumidores", e_fed_by: "Alimentado por", e_none: "La casa", e_pylon: "Dibujar la torre eléctrica", e_coupling: "Batería conectada a", e_coupling_home: "La casa (CA)", e_coupling_inverter: "El inversor (CC, híbrido)", e_appliance: "Opciones de HA Appliance Card (YAML)", e_layout: "Disposición", e_layout_auto: "Automática", e_layout_column: "Una columna", e_layout_columns: "Dos columnas", e_layout_compact: "Compacta",
+    printer: "Impresora", filament_dryer: "Secador de filamento", drying_rack: "Tendedero de pared", e_type_nopc: "Tipo (dibujado como enchufe: instale HA Printer Card)", washer: "Lavadora", dryer: "Secadora", dishwasher: "Lavavajillas", fridge: "Frigorífico", oven: "Horno", cooktop: "Placa de cocina", microwave: "Microondas", kettle: "Hervidor", coffee: "Cafetera", printer_3d: "Impresora 3D", screen: "Pantalla", network: "Red informática", ups: "SAI", air_conditioner: "Aire acondicionado", space_heater: "Calefactor", dehumidifier: "Deshumidificador", pool_pump: "Bomba de piscina", spa: "Spa", robot: "Robot", lamp: "Lámpara", e_strings_count: "Número de strings", e_consumers: "Consumidores", e_consumers_count: "Número de consumidores", e_fed_by: "Alimentado por", e_none: "La casa", e_pylon: "Dibujar la torre eléctrica", e_coupling: "Batería conectada a", e_coupling_home: "La casa (CA)", e_coupling_inverter: "El inversor (CC, híbrido)", e_appliance: "Opciones de HA Appliance Card (YAML)", e_layout: "Disposición", e_layout_auto: "Automática", e_layout_column: "Una columna", e_layout_columns: "Dos columnas", e_layout_compact: "Compacta", e_layout_wrap: "Llenar el espacio vacío",
     e_panel_device: "Electrónica bajo cada panel", e_pd_none: "Ninguna", e_pd_micro: "Microinversores (sin inversor central)", e_pd_optim: "Optimizadores (con el inversor)", e_pd_micro_string: "Un microinversor por string (2 o 4 paneles)", e_battery_reserve_entity: "Reserva desde una entidad (sustituye el valor)", e_hide_below: "Ocultar consumidores por debajo de (W, vacío = todos)", e_type_noac: "Tipo (dibujado como enchufe: instale HA Appliance Card)", e_style: "Estilo", e_style_drawn: "Dibujado", e_style_light: "Ligero (dibujos pequeños)", e_max_scale: "Zoom máximo",
     auto: "Automático",
   },
@@ -200,7 +200,7 @@ const IE_I18N = {
     e_battery_soc: "Stato di carica (%)", e_battery_reserve: "Riserva (%)",
     e_home: "Casa", e_home_power: "Potenza della casa (facoltativa, altrimenti calcolata)",
     e_consumer: "Utenza {n}", e_entity: "Sensore di potenza", e_type: "Disegno",
-    printer: "Stampante", filament_dryer: "Essiccatore di filamento", drying_rack: "Stendibiancheria a muro", e_type_nopc: "Tipo (disegnato come presa: installa HA Printer Card)", washer: "Lavatrice", dryer: "Asciugatrice", dishwasher: "Lavastoviglie", fridge: "Frigorifero", oven: "Forno", cooktop: "Piano cottura", microwave: "Microonde", kettle: "Bollitore", coffee: "Macchina da caffè", printer_3d: "Stampante 3D", screen: "Schermo", network: "Rete informatica", ups: "UPS", air_conditioner: "Condizionatore", space_heater: "Stufetta", dehumidifier: "Deumidificatore", pool_pump: "Pompa della piscina", spa: "Spa", robot: "Robot", lamp: "Lampada", e_strings_count: "Numero di stringhe", e_consumers: "Utenze", e_consumers_count: "Numero di utenze", e_fed_by: "Alimentato da", e_none: "La casa", e_pylon: "Disegnare il traliccio", e_coupling: "Batteria collegata a", e_coupling_home: "La casa (CA)", e_coupling_inverter: "L'inverter (CC, ibrido)", e_appliance: "Opzioni di HA Appliance Card (YAML)", e_layout: "Disposizione", e_layout_auto: "Automatica", e_layout_column: "Una colonna", e_layout_columns: "Due colonne", e_layout_compact: "Compatta",
+    printer: "Stampante", filament_dryer: "Essiccatore di filamento", drying_rack: "Stendibiancheria a muro", e_type_nopc: "Tipo (disegnato come presa: installa HA Printer Card)", washer: "Lavatrice", dryer: "Asciugatrice", dishwasher: "Lavastoviglie", fridge: "Frigorifero", oven: "Forno", cooktop: "Piano cottura", microwave: "Microonde", kettle: "Bollitore", coffee: "Macchina da caffè", printer_3d: "Stampante 3D", screen: "Schermo", network: "Rete informatica", ups: "UPS", air_conditioner: "Condizionatore", space_heater: "Stufetta", dehumidifier: "Deumidificatore", pool_pump: "Pompa della piscina", spa: "Spa", robot: "Robot", lamp: "Lampada", e_strings_count: "Numero di stringhe", e_consumers: "Utenze", e_consumers_count: "Numero di utenze", e_fed_by: "Alimentato da", e_none: "La casa", e_pylon: "Disegnare il traliccio", e_coupling: "Batteria collegata a", e_coupling_home: "La casa (CA)", e_coupling_inverter: "L'inverter (CC, ibrido)", e_appliance: "Opzioni di HA Appliance Card (YAML)", e_layout: "Disposizione", e_layout_auto: "Automatica", e_layout_column: "Una colonna", e_layout_columns: "Due colonne", e_layout_compact: "Compatta", e_layout_wrap: "Riempire lo spazio vuoto",
     e_panel_device: "Elettronica sotto ogni pannello", e_pd_none: "Nessuna", e_pd_micro: "Microinverter (senza inverter centrale)", e_pd_optim: "Ottimizzatori (con l'inverter)", e_pd_micro_string: "Un microinverter per stringa (2 o 4 pannelli)", e_battery_reserve_entity: "Riserva da un'entità (sostituisce il valore)", e_hide_below: "Nascondi le utenze sotto (W, vuoto = tutte)", e_type_noac: "Tipo (disegnato come presa: installa HA Appliance Card)", e_style: "Stile", e_style_drawn: "Disegnato", e_style_light: "Leggero (disegni piccoli)", e_max_scale: "Zoom massimo",
     auto: "Automatico",
   },
@@ -226,7 +226,7 @@ const IE_I18N = {
     e_battery_soc: "Laadtoestand (%)", e_battery_reserve: "Reserve (%)",
     e_home: "Huis", e_home_power: "Huisverbruik (optioneel, anders berekend)",
     e_consumer: "Verbruiker {n}", e_entity: "Vermogenssensor", e_type: "Tekening",
-    printer: "Printer", filament_dryer: "Filamentdroger", drying_rack: "Wanddroogrek", e_type_nopc: "Type (als stekker getekend: installeer HA Printer Card)", washer: "Wasmachine", dryer: "Droger", dishwasher: "Vaatwasser", fridge: "Koelkast", oven: "Oven", cooktop: "Kookplaat", microwave: "Magnetron", kettle: "Waterkoker", coffee: "Koffiezetapparaat", printer_3d: "3D-printer", screen: "Scherm", network: "Netwerk", ups: "UPS", air_conditioner: "Airco", space_heater: "Kachel", dehumidifier: "Ontvochtiger", pool_pump: "Zwembadpomp", spa: "Spa", robot: "Robot", lamp: "Lamp", e_strings_count: "Aantal strings", e_consumers: "Verbruikers", e_consumers_count: "Aantal verbruikers", e_fed_by: "Gevoed door", e_none: "Het huis", e_pylon: "Hoogspanningsmast tekenen", e_coupling: "Batterij verbonden met", e_coupling_home: "Het huis (AC)", e_coupling_inverter: "De omvormer (DC, hybride)", e_appliance: "Opties van HA Appliance Card (YAML)", e_layout: "Indeling", e_layout_auto: "Automatisch", e_layout_column: "Eén kolom", e_layout_columns: "Twee kolommen", e_layout_compact: "Compact",
+    printer: "Printer", filament_dryer: "Filamentdroger", drying_rack: "Wanddroogrek", e_type_nopc: "Type (als stekker getekend: installeer HA Printer Card)", washer: "Wasmachine", dryer: "Droger", dishwasher: "Vaatwasser", fridge: "Koelkast", oven: "Oven", cooktop: "Kookplaat", microwave: "Magnetron", kettle: "Waterkoker", coffee: "Koffiezetapparaat", printer_3d: "3D-printer", screen: "Scherm", network: "Netwerk", ups: "UPS", air_conditioner: "Airco", space_heater: "Kachel", dehumidifier: "Ontvochtiger", pool_pump: "Zwembadpomp", spa: "Spa", robot: "Robot", lamp: "Lamp", e_strings_count: "Aantal strings", e_consumers: "Verbruikers", e_consumers_count: "Aantal verbruikers", e_fed_by: "Gevoed door", e_none: "Het huis", e_pylon: "Hoogspanningsmast tekenen", e_coupling: "Batterij verbonden met", e_coupling_home: "Het huis (AC)", e_coupling_inverter: "De omvormer (DC, hybride)", e_appliance: "Opties van HA Appliance Card (YAML)", e_layout: "Indeling", e_layout_auto: "Automatisch", e_layout_column: "Eén kolom", e_layout_columns: "Twee kolommen", e_layout_compact: "Compact", e_layout_wrap: "Lege ruimte vullen",
     e_panel_device: "Elektronica onder elk paneel", e_pd_none: "Geen", e_pd_micro: "Micro-omvormers (geen centrale omvormer)", e_pd_optim: "Optimizers (met de omvormer)", e_pd_micro_string: "Eén micro-omvormer per string (2 of 4 panelen)", e_battery_reserve_entity: "Reserve uit een entiteit (vervangt de waarde)", e_hide_below: "Verbruikers verbergen onder (W, leeg = alle)", e_type_noac: "Type (als stekker getekend: installeer HA Appliance Card)", e_style: "Stijl", e_style_drawn: "Getekend", e_style_light: "Licht (kleine tekeningen)", e_max_scale: "Maximale zoom",
     auto: "Automatisch",
   },
@@ -1516,7 +1516,12 @@ function ieLayout(model, cfg) {
   // Light drawings are small: one column holds more of them, and compact is
   // what they already are.
   const light = ieStyle(c) === "light";
-  const askLayout = IE_CONSUMER_LAYOUTS.includes(c.consumers_layout) ? c.consumers_layout : "auto";
+  let askLayout = IE_CONSUMER_LAYOUTS.includes(c.consumers_layout) ? c.consumers_layout : "auto";
+  // Wrap: two columns on the right, and the rest in rows under the grid and
+  // the house, where the card is empty, all fed by one line branching off.
+  // Like two columns, it falls back to one with chains or a single consumer.
+  const wrap = askLayout === "wrap";
+  if (wrap) askLayout = "columns";
   let cmode = askLayout === "auto" ? (model.consumers.length > (light ? IE_LIGHT_AUTO_MAX : 3) && !chains ? "columns" : "column") : askLayout;
   if (cmode === "columns" && (chains || model.consumers.length < 2)) cmode = "column";
   if (light && cmode === "compact") cmode = "column";
@@ -1527,7 +1532,7 @@ function ieLayout(model, cfg) {
   let groups = model.strings.map((s) => ({ ...s, drawn: s.panels.length || 3, decorative: !s.panels.length }));
   if (!groups.length && model.hasSolar) groups = [{ name: "", index: 0, entity: "", panels: [], w: model.pv, drawn: 4, decorative: true }];
 
-  const L = { view, groups: [], width: IE_W + ox + (chains ? IE_CHILD_W : 0) + (cmode === "columns" ? col2W : 0) + (light && model.consumers.length ? IE_LIGHT_EXTRA : 0), micro: !!model.micro, optimizers: !!model.optimizers, cmode, light };
+  const L = { view, groups: [], width: IE_W + ox + (chains ? IE_CHILD_W : 0) + (cmode === "columns" ? col2W : 0) + (light && model.consumers.length ? IE_LIGHT_EXTRA : 0), micro: !!model.micro, optimizers: !!model.optimizers, cmode, light, wrap };
   let solarBottom = 0;
   if (groups.length) {
     const G = groups.length;
@@ -1590,9 +1595,32 @@ function ieLayout(model, cfg) {
   const minY = (L.groups.length ? solarBottom : 0) + 74;
   if (cmode === "columns") {
     const stagger = light ? IE_LIGHT_STAGGER : IE_STAGGER;
-    const span = (model.consumers.length - 1) * stagger;
-    const top = Math.max(minY, by - 50 - span / 2);
-    L.consumers = model.consumers.map((k, i) => ({ x: rightX + (i % 2) * col2W, y: top + i * stagger, col: i % 2, children: [] }));
+    const right = (k) => {
+      const top = Math.max(minY, by - 50 - ((k - 1) * stagger) / 2);
+      return Array.from({ length: k }, (_, i) => ({ x: rightX + (i % 2) * col2W, y: top + i * stagger, col: i % 2, children: [] }));
+    };
+    L.consumers = right(model.consumers.length);
+    if (wrap) {
+      // The rows start under what stands on the left; each one has a lane
+      // above its drawings for the flows. Every split between the columns
+      // and the rows is tried, and the least tall one kept.
+      const ext = light ? 27 : 54, below = light ? 30 : 112;
+      let leftBottom = by + 52;
+      if (L.grid) leftBottom = Math.max(leftBottom, L.grid.y + 112);
+      if (L.battery) leftBottom = Math.max(leftBottom, L.battery.y + 112);
+      const perRow = light ? 2 : 3, colW = light ? 200 : 130;
+      const rowStep = below + 18 + ext, y0 = leftBottom + 18 + ext;
+      const n = model.consumers.length;
+      let best = null;
+      for (let k = n; k >= 0; k--) {
+        const r = right(k);
+        const rows = Array.from({ length: n - k }, (_, j) => ({ x: leftX + (j % perRow) * colW, y: y0 + Math.floor(j / perRow) * rowStep, col: 0, row: true, children: [] }));
+        const h = Math.max(leftBottom, ...r.map((q) => q.y + below), ...rows.map((q) => q.y + below));
+        if (!best || h < best.h) best = { h, list: [...r, ...rows] };
+      }
+      L.consumers = best.list;
+      L.trunkX = rightX - (light ? IE_LIGHT_HALF + 8 : 75);
+    }
   } else {
     const step = light ? IE_LIGHT_STEP : cmode === "compact" ? IE_COMPACT_STEP : IE_STEP;
     const blocks = model.consumers.map((k) => Math.max(1, k.children.length) * step);
@@ -1947,7 +1975,34 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       const n = L.consumers.length;
       const a = { x: L.house.right + 3, y: L.house.by - 30 + (n > 1 ? (i - (n - 1) / 2) * Math.min(9, 30 / (n - 1)) : 0) }, b = { x: p.x - half, y: p.y };
       let spec;
-      if (p.col) {
+      if (L.wrap && L.trunkX) {
+        // One line: from the house across to the trunk, up or down it, then
+        // off to the consumer; to the second column under the first one's
+        // drawings, to a row along the lane above it and down into the drawing.
+        const tx = L.trunkX, o = { x: L.house.right + 3, y: L.house.by - 30 };
+        const along = (y, dir) => {
+          const s = Math.sign(y - o.y) || 1;
+          if (Math.abs(y - o.y) < 28) return [ieCubic(o.x, o.y, tx, o.y, tx, y, tx + 14 * dir, y)];
+          return [
+            ieLine(o.x, o.y, tx - 14, o.y),
+            ieCubic(tx - 14, o.y, tx - 4, o.y, tx, o.y + 4 * s, tx, o.y + 14 * s),
+            ieLine(tx, o.y + 14 * s, tx, y - 14 * s),
+            ieCubic(tx, y - 14 * s, tx, y - 4 * s, tx + 4 * dir, y, tx + 14 * dir, y),
+          ];
+        };
+        if (p.row) {
+          const ext = L.light ? 27 : 54, cx = L.light ? p.x - 20 : p.x, lane = p.y - ext - 12, end = p.y - ext - 2;
+          spec = ieChain(...along(lane, -1), ieLine(tx - 14, lane, cx + 12, lane), ieCubic(cx + 12, lane, cx + 3, lane, cx, lane + 3, cx, end));
+        } else {
+          const gy = p.col && !L.light ? p.y + 19 : p.y;
+          const segs = along(gy, 1);
+          if (gy !== p.y) {
+            const x0 = p.x - IE_COL2_W;
+            segs.push(ieLine(tx + 14, gy, x0 + 62, gy), ieCubic(x0 + 62, gy, x0 + 80, gy, b.x - 14, b.y, b.x, b.y));
+          } else segs.push(ieLine(tx + 14, gy, b.x, b.y));
+          spec = ieChain(...segs);
+        }
+      } else if (p.col) {
         // Into the second column: under the first column's drawing above,
         // across, then up to the consumer.
         // Light drawings leave a free band level with the second column's own.

@@ -41,7 +41,7 @@ const IE_PRINTER_TYPE = "printer";
 // Power above which a printer drawn from its plug alone is printing (W).
 const IE_PRINTING_W = 50;
 const IE_METERS = ["box", "linky", "dome"];
-const IE_CONSUMER_LAYOUTS = ["auto", "column", "columns", "compact"];
+const IE_CONSUMER_LAYOUTS = ["auto", "column", "columns", "compact", "wrap"];
 // "drawn": the consumers drawn full size; "light": drawn at half size,
 // their name and power beside them, closer together.
 const IE_STYLES = ["drawn", "light"];

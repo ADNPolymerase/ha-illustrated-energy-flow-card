@@ -45,7 +45,12 @@ function ieLayout(model, cfg) {
   // Light drawings are small: one column holds more of them, and compact is
   // what they already are.
   const light = ieStyle(c) === "light";
-  const askLayout = IE_CONSUMER_LAYOUTS.includes(c.consumers_layout) ? c.consumers_layout : "auto";
+  let askLayout = IE_CONSUMER_LAYOUTS.includes(c.consumers_layout) ? c.consumers_layout : "auto";
+  // Wrap: two columns on the right, and the rest in rows under the grid and
+  // the house, where the card is empty, all fed by one line branching off.
+  // Like two columns, it falls back to one with chains or a single consumer.
+  const wrap = askLayout === "wrap";
+  if (wrap) askLayout = "columns";
   let cmode = askLayout === "auto" ? (model.consumers.length > (light ? IE_LIGHT_AUTO_MAX : 3) && !chains ? "columns" : "column") : askLayout;
   if (cmode === "columns" && (chains || model.consumers.length < 2)) cmode = "column";
   if (light && cmode === "compact") cmode = "column";
@@ -56,7 +61,7 @@ function ieLayout(model, cfg) {
   let groups = model.strings.map((s) => ({ ...s, drawn: s.panels.length || 3, decorative: !s.panels.length }));
   if (!groups.length && model.hasSolar) groups = [{ name: "", index: 0, entity: "", panels: [], w: model.pv, drawn: 4, decorative: true }];
 
-  const L = { view, groups: [], width: IE_W + ox + (chains ? IE_CHILD_W : 0) + (cmode === "columns" ? col2W : 0) + (light && model.consumers.length ? IE_LIGHT_EXTRA : 0), micro: !!model.micro, optimizers: !!model.optimizers, cmode, light };
+  const L = { view, groups: [], width: IE_W + ox + (chains ? IE_CHILD_W : 0) + (cmode === "columns" ? col2W : 0) + (light && model.consumers.length ? IE_LIGHT_EXTRA : 0), micro: !!model.micro, optimizers: !!model.optimizers, cmode, light, wrap };
   let solarBottom = 0;
   if (groups.length) {
     const G = groups.length;
@@ -119,9 +124,32 @@ function ieLayout(model, cfg) {
   const minY = (L.groups.length ? solarBottom : 0) + 74;
   if (cmode === "columns") {
     const stagger = light ? IE_LIGHT_STAGGER : IE_STAGGER;
-    const span = (model.consumers.length - 1) * stagger;
-    const top = Math.max(minY, by - 50 - span / 2);
-    L.consumers = model.consumers.map((k, i) => ({ x: rightX + (i % 2) * col2W, y: top + i * stagger, col: i % 2, children: [] }));
+    const right = (k) => {
+      const top = Math.max(minY, by - 50 - ((k - 1) * stagger) / 2);
+      return Array.from({ length: k }, (_, i) => ({ x: rightX + (i % 2) * col2W, y: top + i * stagger, col: i % 2, children: [] }));
+    };
+    L.consumers = right(model.consumers.length);
+    if (wrap) {
+      // The rows start under what stands on the left; each one has a lane
+      // above its drawings for the flows. Every split between the columns
+      // and the rows is tried, and the least tall one kept.
+      const ext = light ? 27 : 54, below = light ? 30 : 112;
+      let leftBottom = by + 52;
+      if (L.grid) leftBottom = Math.max(leftBottom, L.grid.y + 112);
+      if (L.battery) leftBottom = Math.max(leftBottom, L.battery.y + 112);
+      const perRow = light ? 2 : 3, colW = light ? 200 : 130;
+      const rowStep = below + 18 + ext, y0 = leftBottom + 18 + ext;
+      const n = model.consumers.length;
+      let best = null;
+      for (let k = n; k >= 0; k--) {
+        const r = right(k);
+        const rows = Array.from({ length: n - k }, (_, j) => ({ x: leftX + (j % perRow) * colW, y: y0 + Math.floor(j / perRow) * rowStep, col: 0, row: true, children: [] }));
+        const h = Math.max(leftBottom, ...r.map((q) => q.y + below), ...rows.map((q) => q.y + below));
+        if (!best || h < best.h) best = { h, list: [...r, ...rows] };
+      }
+      L.consumers = best.list;
+      L.trunkX = rightX - (light ? IE_LIGHT_HALF + 8 : 75);
+    }
   } else {
     const step = light ? IE_LIGHT_STEP : cmode === "compact" ? IE_COMPACT_STEP : IE_STEP;
     const blocks = model.consumers.map((k) => Math.max(1, k.children.length) * step);
@@ -476,7 +504,34 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       const n = L.consumers.length;
       const a = { x: L.house.right + 3, y: L.house.by - 30 + (n > 1 ? (i - (n - 1) / 2) * Math.min(9, 30 / (n - 1)) : 0) }, b = { x: p.x - half, y: p.y };
       let spec;
-      if (p.col) {
+      if (L.wrap && L.trunkX) {
+        // One line: from the house across to the trunk, up or down it, then
+        // off to the consumer; to the second column under the first one's
+        // drawings, to a row along the lane above it and down into the drawing.
+        const tx = L.trunkX, o = { x: L.house.right + 3, y: L.house.by - 30 };
+        const along = (y, dir) => {
+          const s = Math.sign(y - o.y) || 1;
+          if (Math.abs(y - o.y) < 28) return [ieCubic(o.x, o.y, tx, o.y, tx, y, tx + 14 * dir, y)];
+          return [
+            ieLine(o.x, o.y, tx - 14, o.y),
+            ieCubic(tx - 14, o.y, tx - 4, o.y, tx, o.y + 4 * s, tx, o.y + 14 * s),
+            ieLine(tx, o.y + 14 * s, tx, y - 14 * s),
+            ieCubic(tx, y - 14 * s, tx, y - 4 * s, tx + 4 * dir, y, tx + 14 * dir, y),
+          ];
+        };
+        if (p.row) {
+          const ext = L.light ? 27 : 54, cx = L.light ? p.x - 20 : p.x, lane = p.y - ext - 12, end = p.y - ext - 2;
+          spec = ieChain(...along(lane, -1), ieLine(tx - 14, lane, cx + 12, lane), ieCubic(cx + 12, lane, cx + 3, lane, cx, lane + 3, cx, end));
+        } else {
+          const gy = p.col && !L.light ? p.y + 19 : p.y;
+          const segs = along(gy, 1);
+          if (gy !== p.y) {
+            const x0 = p.x - IE_COL2_W;
+            segs.push(ieLine(tx + 14, gy, x0 + 62, gy), ieCubic(x0 + 62, gy, x0 + 80, gy, b.x - 14, b.y, b.x, b.y));
+          } else segs.push(ieLine(tx + 14, gy, b.x, b.y));
+          spec = ieChain(...segs);
+        }
+      } else if (p.col) {
         // Into the second column: under the first column's drawing above,
         // across, then up to the consumer.
         // Light drawings leave a free band level with the second column's own.

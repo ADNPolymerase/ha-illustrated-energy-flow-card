@@ -99,7 +99,7 @@ consumers:
 | `consumers[].appliance` | | Extra options for the card that draws it: HA Appliance Card (`state_entity` for a drawing that follows an on/off state...), or HA Printer Card for a `printer` (`entity` for its status sensor, `printer_type`, `state_map`, `printing_watts`). Without a status sensor, a printer is ready while its plug draws power and printing above 50 W |
 | `consumers[].children` | | Consumers fed by this one (one level) |
 | `consumers_hide_below` | | Hide the consumers drawing this power or less (W), and the unavailable ones. A consumer that stops stays two minutes, one feeding another at work stays. Empty: all shown |
-| `consumers_layout` | `auto` | `column`, `columns` (two staggered columns, much less tall) or `compact` (smaller drawings, closer together). `auto` takes two columns past three consumers, one column when a consumer feeds others |
+| `consumers_layout` | `auto` | `column`, `columns` (two staggered columns, much less tall), `compact` (smaller drawings, closer together), or `wrap` (two columns, then the rest in rows under the grid and the house, where the card is empty, all fed by one line that branches out: about half as tall with many consumers). `auto` takes two columns past three consumers, one column when a consumer feeds others |
 | `panel_peak` | `450` | Peak power of one panel (W), for the glow and the flow speed |
 | `rated_power` | `6000` | Power of the fastest flow (W) |
 | `style` | `drawn` | `drawn`, or `light`: each consumer drawn at half size, its name and power beside it, the consumers much closer together. One column up to eight consumers |
