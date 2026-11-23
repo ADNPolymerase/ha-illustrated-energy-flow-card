@@ -212,7 +212,9 @@ class IllustratedEnergyFlowCard extends HTMLElement {
   set hass(hass) {
     this._hass = hass;
     if (!this._config) return;
-    if (this._ac) for (const rec of this._ac.values()) rec.el.hass = hass;
+    // A drawing that follows a made-up on/off state keeps it between redraws:
+    // the real hass alone would leave it unavailable (a camera turning grey).
+    if (this._ac) for (const rec of this._ac.values()) rec.el.hass = rec.synth ? this._synthHass(rec, rec.synth, ieWatts(hass, rec.entity), rec.type) : hass;
     const sig = this._signature();
     if (sig !== this._sig) this._render();
   }
@@ -295,6 +297,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       if (rec.sig !== sig) {
         try { rec.el.setConfig(conf); rec.sig = sig; } catch (e) { rec.sig = ""; }
       }
+      Object.assign(rec, { synth, entity: cm.entity, type: cm.type });
       rec.el.hass = synth ? this._synthHass(rec, synth, cm.w, cm.type) : this._hass;
       if (rec.el.parentNode !== holder) holder.appendChild(rec.el);
       keep.add(key);

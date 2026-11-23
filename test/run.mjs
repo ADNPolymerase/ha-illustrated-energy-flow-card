@@ -740,6 +740,14 @@ const draw = (config, states = base, lang = "en") => {
   contains("camera: a plug at 3 W still dimmed", html, 'node dim hit" data-entity="sensor.plug"');
   card.hass = hassOf({ ...base, "sensor.cam": S(0), "sensor.plug": S(3) });
   check("camera: off at no power", r.el.hass.states[id].state, "off");
+  // A new hass that does not redraw the card keeps the made-up state.
+  card.hass = hassOf({ ...base, "sensor.cam": S(13), "sensor.plug": S(3) });
+  const sig = card._sig;
+  card.hass = hassOf({ ...base, "sensor.cam": S(13), "sensor.plug": S(3), "sensor.other": S(1) });
+  check("camera: no redraw for an unrelated change", card._sig, sig);
+  check("camera: still on between redraws", r.el.hass.states[id] && r.el.hass.states[id].state, "on");
+  check("camera: the real states still given between redraws", r.el.hass.states["sensor.other"] && r.el.hass.states["sensor.other"].state, "1");
+  check("a plain drawing gets the real hass between redraws", card._ac.get("c1") ? card._ac.get("c1").el.hass === card._hass : true, true);
   check("camera: offered in the editor", JSON.stringify(Editor.schema(hassOf(base), "fr", Editor.toForm({ consumers: [{ entity: "sensor.cam", type: "camera" }] }))).includes('"label":"Caméra de surveillance"'), true);
 }
 
