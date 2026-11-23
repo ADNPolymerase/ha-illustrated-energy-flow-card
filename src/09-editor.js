@@ -21,6 +21,33 @@ function ieFlatConsumers(cfg) {
   return out;
 }
 
+// Where the consumer at a flat place (0-based) sits among the ones beside
+// it: the consumers of the home, or those fed by the same consumer.
+function ieSiblings(cfg, i) {
+  const tops = cfg && Array.isArray(cfg.consumers) ? cfg.consumers : [];
+  let n = 0;
+  for (let a = 0; a < tops.length; a++) {
+    if (n === i) return { parent: -1, idx: a, count: tops.length };
+    n++;
+    const kids = tops[a] && Array.isArray(tops[a].children) ? tops[a].children : [];
+    if (i < n + kids.length) return { parent: a, idx: i - n, count: kids.length };
+    n += kids.length;
+  }
+  return null;
+}
+
+// The consumer at a flat place moved to another place (0-based) among the
+// ones beside it, with the ones it feeds. The config is copied, not changed.
+function ieMoveConsumer(cfg, i, to) {
+  const at = ieSiblings(cfg, i);
+  if (!at || !Number.isInteger(to) || to === at.idx || to < 0 || to >= at.count) return cfg;
+  const move = (arr) => { const a = [...arr]; const [x] = a.splice(at.idx, 1); a.splice(to, 0, x); return a; };
+  const tops = [...cfg.consumers];
+  if (at.parent < 0) return { ...cfg, consumers: move(tops) };
+  tops[at.parent] = { ...tops[at.parent], children: move(tops[at.parent].children) };
+  return { ...cfg, consumers: tops };
+}
+
 function ieCounts(cfg) {
   const s = (cfg && cfg.solar) || {};
   return {
@@ -66,6 +93,8 @@ function ieToForm(cfg, counts) {
     d[`c${i + 1}_type`] = (x && x.type) || "generic";
     d[`c${i + 1}_name`] = ieNameOf(x);
     d[`c${i + 1}_fed`] = String(f.fed || 0);
+    const at = flat[i] ? ieSiblings(c, i) : null;
+    d[`c${i + 1}_pos`] = String(at ? at.idx + 1 : 1);
     d[`c${i + 1}_appliance`] = x && typeof x.appliance === "object" && x.appliance ? x.appliance : {};
   }
   return d;
@@ -215,6 +244,13 @@ function ieSchema(hass, lang, data) {
   // A type typed in YAML that the list lacks is added as it is, so the
   // choice shows its translated name (a free-text select would show the code).
   const typeOptions = (cur) => [...IE_CONSUMER_TYPES, ...(cur && !IE_CONSUMER_TYPES.includes(cur) ? [cur] : [])].map((v) => ({ value: v, label: IE_CONSUMER_TYPES.includes(v) ? t(v) : v }));
+  const fedOf = (i) => String(data[`c${i}_fed`] || "0");
+  const siblings = (i) => {
+    if (!data[`c${i}_entity`]) return 0;
+    let k = 0;
+    for (let j = 1; j <= nC; j++) if (data[`c${j}_entity`] && fedOf(j) === fedOf(i)) k++;
+    return k;
+  };
   const consumers = [];
   for (let i = 1; i <= nC; i++) {
     // A consumer is fed by the home, or by one of the consumers above it
@@ -228,7 +264,8 @@ function ieSchema(hass, lang, data) {
     consumers.push(exp(name ? `${t("e_consumer", { n: i })} · ${name}` : t("e_consumer", { n: i }), [
       ent(`c${i}_entity`, power, t("e_entity")),
       grid2([sel(`c${i}_type`, typeLabel(data[`c${i}_type`]), typeOptions(data[`c${i}_type`])), txt(`c${i}_name`, t("e_name"))]),
-      sel(`c${i}_fed`, t("e_fed_by"), feeds),
+      // Its place among the consumers fed like it, when there is a choice.
+      siblings(i) > 1 ? grid2([sel(`c${i}_fed`, t("e_fed_by"), feeds), sel(`c${i}_pos`, t("e_position"), Array.from({ length: siblings(i) }, (_, k) => ({ value: String(k + 1), label: String(k + 1) })))]) : sel(`c${i}_fed`, t("e_fed_by"), feeds),
       { name: `c${i}_appliance`, label: t("e_appliance"), selector: { object: {} } },
     ]));
   }
@@ -329,6 +366,15 @@ class IllustratedEnergyFlowCardEditor extends HTMLElement {
       strings: Math.max(0, Math.min(IE_MAX_STRINGS, Number(value.strings_count) || 0)),
       consumers: Math.max(0, Math.min(IE_MAX_CONSUMERS, Number(value.consumers_count) || 0)),
     };
+    // A consumer given another place: the config is reordered as it is.
+    for (let i = 1; i <= counts.consumers; i++) {
+      const next = ieMoveConsumer(this._config, i - 1, Number(value[`c${i}_pos`]) - 1);
+      if (next === this._config) continue;
+      this._config = next;
+      this._render();
+      this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: next }, bubbles: true, composed: true }));
+      return;
+    }
     const was = this._counts || ieCounts(this._config);
     const countsMoved = counts.strings !== was.strings || counts.consumers !== was.consumers;
     // The count field changes on every key: going from 9 to 10 passes

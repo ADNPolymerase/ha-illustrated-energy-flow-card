@@ -295,7 +295,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       if (rec.sig !== sig) {
         try { rec.el.setConfig(conf); rec.sig = sig; } catch (e) { rec.sig = ""; }
       }
-      rec.el.hass = synth ? this._synthHass(rec, synth, cm.w) : this._hass;
+      rec.el.hass = synth ? this._synthHass(rec, synth, cm.w, cm.type) : this._hass;
       if (rec.el.parentNode !== holder) holder.appendChild(rec.el);
       keep.add(key);
       if (kind === "printer") continue;
@@ -313,8 +313,8 @@ class IllustratedEnergyFlowCard extends HTMLElement {
     for (const k of [...this._ac.keys()]) if (!keep.has(k)) this._ac.delete(k);
   }
 
-  _synthHass(rec, id, w) {
-    const on = w !== null && w > IE_ON_W;
+  _synthHass(rec, id, w, type) {
+    const on = w !== null && w > ieOnW(type);
     if (rec.on !== on) { rec.on = on; rec.since = new Date().toISOString(); }
     const h = this._hass || {};
     return { ...h, states: { ...(h.states || {}), [id]: { entity_id: id, state: on ? "on" : "off", attributes: {}, last_changed: rec.since, last_updated: rec.since } } };
@@ -540,12 +540,12 @@ class IllustratedEnergyFlowCard extends HTMLElement {
           ? ieChain(ieCubic(a.x, a.y, a.x + 46, a.y, x0 - 116, gy, x0 - 70, gy), ieLine(x0 - 70, gy, b.x, b.y))
           : ieChain(ieCubic(a.x, a.y, a.x + 46, a.y, x0 - 116, gy, x0 - 70, gy), ieLine(x0 - 70, gy, x0 + 62, gy), ieCubic(x0 + 62, gy, x0 + 80, gy, b.x - 14, b.y, b.x, b.y));
       } else spec = ieCubic(a.x, a.y, a.x + 46, a.y, b.x - 46, b.y, b.x, b.y);
-      const idle = !(cm.w !== null && cm.w > IE_ON_W);
+      const idle = !(cm.w !== null && cm.w > ieOnW(cm.type));
       svg += `<g${dimOn && idle ? ' class="dim"' : ""}>${ieFlow(spec, cm.w, IE_COLORS.load, rated, fo)}</g>`;
       p.children.forEach((q, j) => {
         const ch = cm.children[j];
         const ca = { x: p.x + (L.consumerRight || half - 2), y: p.y }, cb = { x: q.x - half, y: q.y };
-        const cidle = !(ch.w !== null && ch.w > IE_ON_W);
+        const cidle = !(ch.w !== null && ch.w > ieOnW(ch.type));
         svg += `<g${dimOn && cidle ? ' class="dim"' : ""}>${ieFlow(ieCubic(ca.x, ca.y, ca.x + 50, ca.y, cb.x - 50, cb.y, cb.x, cb.y), ch.w, IE_COLORS.load, rated, fo)}</g>`;
       });
     });
@@ -593,7 +593,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       return `<div class="lnode${dimOn && !on ? " dim" : ""}${click ? " hit" : ""}"${click ? ` data-entity="${esc(cm.entity)}"` : ""} style="left:${f1(pos.x - IE_LIGHT_HALF)}px;top:${f1(pos.y - 27)}px"><div class="lc"><div class="lk">${html}</div></div><div class="lt"><div class="nm">${esc(cm.name || t(cm.type))}</div><div class="vl">${esc(cm.w === null ? t("unavailable") : fmt(cm.w))}</div></div></div>`;
     };
     const consumerNode = (pos, cm, key) => {
-      const on = cm.w !== null && cm.w > IE_ON_W;
+      const on = cm.w !== null && cm.w > ieOnW(cm.type);
       let html;
       if (cm.type === IE_PRINTER_TYPE) {
         if (pcReady) {

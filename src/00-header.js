@@ -35,7 +35,7 @@ const IE_LANGS = ["en", "fr", "de", "es", "it", "nl"];
 // works when that card is installed (it draws them); without it, the first
 // four are drawn here and every other one as a smart plug.
 const IE_BUILTIN_TYPES = ["generic", "ev_charger", "heat_pump", "water_heater"];
-const IE_CONSUMER_TYPES = [...IE_BUILTIN_TYPES, "printer", "washer", "dryer", "dishwasher", "fridge", "oven", "cooktop", "microwave", "kettle", "coffee", "printer_3d", "filament_dryer", "drying_rack", "screen", "network", "ups", "air_conditioner", "space_heater", "dehumidifier", "pool_pump", "spa", "robot", "lamp"];
+const IE_CONSUMER_TYPES = [...IE_BUILTIN_TYPES, "printer", "washer", "dryer", "dishwasher", "fridge", "oven", "cooktop", "microwave", "kettle", "coffee", "printer_3d", "filament_dryer", "drying_rack", "screen", "network", "ups", "air_conditioner", "space_heater", "dehumidifier", "pool_pump", "spa", "robot", "lamp", "camera"];
 // Drawn by HA Printer Card (ADNPolymerase/ha-printer-card) when installed.
 const IE_PRINTER_TYPE = "printer";
 // Power above which a printer drawn from its plug alone is printing (W).
@@ -53,9 +53,12 @@ const IE_SOLAR_VIEWS = ["panel", "string", "total"];
 const IE_MAX_STRINGS = 6;
 const IE_MAX_CONSUMERS = 30;
 // HA Appliance Card types whose drawing follows an on/off state.
-const IE_ONOFF_TYPES = ["drying_rack"];
+const IE_ONOFF_TYPES = ["drying_rack", "camera"];
 // A consumer drawing more than this is on (W).
 const IE_ON_W = 5;
+// A camera runs on a few watts: it is on from this (W).
+const IE_ON_W_TYPE = { camera: 0.5 };
+const ieOnW = (type) => IE_ON_W_TYPE[type] !== undefined ? IE_ON_W_TYPE[type] : IE_ON_W;
 const IE_HIDE_HOLD = 120000;
 // The box a HA Appliance Card drawing sits in.
 const IE_AC_W = 130;

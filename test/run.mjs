@@ -677,4 +677,70 @@ const draw = (config, states = base, lang = "en") => {
   check("stub finds the battery level", stub.battery && stub.battery.soc_entity, "sensor.battery_level");
 }
 
+// ── Editor: a consumer moved to another place ───────────────────────────────
+{
+  const start = {
+    title: "Kept",
+    consumers: [
+      { entity: "sensor.a", name: "A", appliance: { foo: 1 }, children: [{ entity: "sensor.a1" }, { entity: "sensor.a2" }] },
+      { entity: "sensor.b", type: "oven" },
+      { entity: "sensor.c", name: "C" },
+    ],
+  };
+  const order = (cfg) => cfg.consumers.map((x) => [x.entity, ...(x.children || []).map((k) => k.entity)].join("+")).join();
+  const f = Editor.toForm(start);
+  check("position: read for each consumer", [1, 2, 3, 4, 5].map((i) => f[`c${i}_pos`]).join(), "1,1,2,2,3");
+  const sch = JSON.stringify(Editor.schema(hassOf(base), "fr", f));
+  contains("position: offered beside fed by", sch, '"name":"c1_pos"');
+  check("position: three places for the home's consumers", (sch.match(/"name":"c4_pos","label":"Position","selector":\{"select":\{"mode":"dropdown","options":\[(\{[^}]*\},?)*\]/) || [""])[0].split("value").length - 1, 3);
+  check("position: not offered to an empty slot", JSON.stringify(Editor.schema(hassOf(base), "fr", Editor.toForm(start, { strings: 0, consumers: 6 }))).includes('"name":"c6_pos"'), false);
+  const alone = Editor.toForm({ consumers: [{ entity: "sensor.x" }] });
+  check("position: not offered to a lone consumer", JSON.stringify(Editor.schema(hassOf(base), "fr", alone)).includes('"name":"c1_pos"'), false);
+
+  const ed = new Editor();
+  ed.hass = hassOf(base);
+  ed.setConfig(start);
+  const move = (slot, to) => {
+    const v = Editor.toForm(ed._config, ed._counts);
+    v[`c${slot}_pos`] = String(to);
+    ed._changed({ stopPropagation() {}, detail: { value: v } });
+  };
+  move(5, 1);
+  check("position: last consumer moved first", order(ed._config), "sensor.c,sensor.a+sensor.a1+sensor.a2,sensor.b");
+  check("position: config-changed sent", ed.events.length, 1);
+  check("position: the config sent is the new order", order(ed.events[0].detail.config), "sensor.c,sensor.a+sensor.a1+sensor.a2,sensor.b");
+  check("position: the form follows", Editor.toForm(ed._config).c1_entity + Editor.toForm(ed._config).c1_pos, "sensor.c1");
+  check("position: the rest of the config kept", ed._config.title + ed._config.consumers[1].appliance.foo + ed._config.consumers[2].type, "Kept1oven");
+  check("position: the start config untouched", order(start), "sensor.a+sensor.a1+sensor.a2,sensor.b,sensor.c");
+  // A consumer fed by another moves among its own.
+  move(3, 2);
+  check("position: a fed consumer moves under its feeder", order(ed._config), "sensor.c,sensor.a+sensor.a2+sensor.a1,sensor.b");
+  check("position: the config sent before untouched", order(ed.events[0].detail.config), "sensor.c,sensor.a+sensor.a1+sensor.a2,sensor.b");
+  // A feeder moves with the ones it feeds.
+  move(2, 3);
+  check("position: a feeder moves with what it feeds", order(ed._config), "sensor.c,sensor.b,sensor.a+sensor.a2+sensor.a1");
+  const n = ed.events.length;
+  move(1, 1);
+  check("position: the same place changes nothing", ed.events.length, n);
+  move(1, 9);
+  check("position: a place out of range changes nothing", ed.events.length, n);
+}
+
+// ── A security camera, on from a few watts ──────────────────────────────────
+{
+  const card = new Card();
+  card.setConfig({ consumers: [{ entity: "sensor.cam", type: "camera" }, { entity: "sensor.plug" }] });
+  card.hass = hassOf({ ...base, "sensor.cam": S(3), "sensor.plug": S(3) });
+  const r = card._ac.get("c0");
+  const id = r && r.el.cfg.state_entity;
+  check("camera: drawn by HA Appliance Card", r && r.el.cfg.appliance_type, "camera");
+  check("camera: on at 3 W", r && r.el.hass.states[id] && r.el.hass.states[id].state, "on");
+  const html = card._wrap.innerHTML;
+  check("camera: not dimmed at 3 W", /node dim[^"]*" data-entity="sensor.cam"/.test(html), false);
+  contains("camera: a plug at 3 W still dimmed", html, 'node dim hit" data-entity="sensor.plug"');
+  card.hass = hassOf({ ...base, "sensor.cam": S(0), "sensor.plug": S(3) });
+  check("camera: off at no power", r.el.hass.states[id].state, "off");
+  check("camera: offered in the editor", JSON.stringify(Editor.schema(hassOf(base), "fr", Editor.toForm({ consumers: [{ entity: "sensor.cam", type: "camera" }] }))).includes('"label":"Caméra de surveillance"'), true);
+}
+
 report();

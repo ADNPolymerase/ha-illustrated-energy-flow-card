@@ -30,7 +30,7 @@ An energy flow card whose nodes are **drawn, animated devices** instead of icons
 - **The home is computed** when you have no consumption sensor (solar + grid + battery).
 - The flow speed follows the power; branches without power fade out.
 - Drawings from [HA Appliance Card](https://github.com/ADNPolymerase/ha-appliance-card), plus a new house, a wall string inverter and the panels.
-- 6 languages (EN, FR, DE, ES, IT, NL), compact visual editor (choose how many strings and consumers), light and dark themes.
+- 6 languages (EN, FR, DE, ES, IT, NL), compact visual editor (choose how many strings and consumers, and the place of each consumer), light and dark themes.
 
 ## Installation
 
@@ -95,7 +95,7 @@ consumers:
 | `battery.coupling` | `home` | `home`, or `inverter` for a battery on the inverter's DC side |
 | `home.power_entity` | computed | Home consumption |
 | `consumers` | | List: `entity`, `name`, `type`, `appliance`, `children` |
-| `consumers[].type` | `generic` | Any HA Appliance Card type (`washer`, `printer_3d`, `filament_dryer`, `fridge`, `network`, `ups`...), or `ev_charger`, `heat_pump`, `water_heater`, `generic` without it. `printer` is drawn by HA Printer Card |
+| `consumers[].type` | `generic` | Any HA Appliance Card type (`washer`, `printer_3d`, `filament_dryer`, `fridge`, `network`, `ups`, `camera`...), or `ev_charger`, `heat_pump`, `water_heater`, `generic` without it. `printer` is drawn by HA Printer Card. A `camera` is on from 0.5 W; give its `camera.*` entity as `appliance.state_entity` to show motion and recording |
 | `consumers[].appliance` | | Extra options for the card that draws it: HA Appliance Card (`state_entity` for a drawing that follows an on/off state...), or HA Printer Card for a `printer` (`entity` for its status sensor, `printer_type`, `state_map`, `printing_watts`). Without a status sensor, a printer is ready while its plug draws power and printing above 50 W |
 | `consumers[].children` | | Consumers fed by this one (one level) |
 | `consumers_hide_below` | | Hide the consumers drawing this power or less (W), and the unavailable ones. A consumer that stops stays two minutes, one feeding another at work stays. Empty: all shown |

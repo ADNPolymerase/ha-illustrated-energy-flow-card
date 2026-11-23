@@ -30,7 +30,7 @@ Une carte de flux d'énergie dont les éléments sont des **appareils dessinés 
 - **La maison est calculée** si vous n'avez pas de capteur de consommation (solaire + réseau + batterie).
 - La vitesse des flux suit la puissance ; les branches sans puissance s'estompent.
 - Dessins repris de [HA Appliance Card](https://github.com/ADNPolymerase/ha-appliance-card), plus une maison, un onduleur mural et les panneaux.
-- 6 langues (EN, FR, DE, ES, IT, NL), éditeur visuel compact (on choisit le nombre de strings et de consommateurs), thèmes clair et sombre.
+- 6 langues (EN, FR, DE, ES, IT, NL), éditeur visuel compact (on choisit le nombre de strings et de consommateurs, et la place de chaque consommateur), thèmes clair et sombre.
 
 ## Installation
 
@@ -95,7 +95,7 @@ consumers:
 | `battery.coupling` | `home` | `home`, ou `inverter` pour une batterie côté continu de l'onduleur |
 | `home.power_entity` | calculée | Consommation de la maison |
 | `consumers` | | Liste : `entity`, `name`, `type`, `appliance`, `children` |
-| `consumers[].type` | `generic` | Tout type de HA Appliance Card (`washer`, `printer_3d`, `filament_dryer`, `fridge`, `network`, `ups`...), ou `ev_charger`, `heat_pump`, `water_heater`, `generic` sans elle. `printer` est dessiné par HA Printer Card |
+| `consumers[].type` | `generic` | Tout type de HA Appliance Card (`washer`, `printer_3d`, `filament_dryer`, `fridge`, `network`, `ups`, `camera`...), ou `ev_charger`, `heat_pump`, `water_heater`, `generic` sans elle. `printer` est dessiné par HA Printer Card. Une `camera` est allumée dès 0,5 W ; son entité `camera.*` en `appliance.state_entity` affiche le mouvement et l'enregistrement |
 | `consumers[].appliance` | | Options supplémentaires de la carte qui le dessine : HA Appliance Card (`state_entity` pour un dessin qui suit un état marche/arrêt...), ou HA Printer Card pour une `printer` (`entity` pour son capteur d'état, `printer_type`, `state_map`, `printing_watts`). Sans capteur d'état, une imprimante est prête tant que sa prise consomme, et imprime au-delà de 50 W |
 | `consumers[].children` | | Consommateurs alimentés par celui-ci (un niveau) |
 | `consumers_hide_below` | | Masque les consommateurs qui tirent cette puissance ou moins (W), et ceux indisponibles. Un consommateur qui s'arrête reste deux minutes, celui qui en alimente un autre en marche reste. Vide : tous affichés |
