@@ -392,7 +392,11 @@ const draw = (config, states = base, lang = "en") => {
   const wide = fake(200, 112);
   card._fitAppliance(wide);
   check("wide drawing: shrunk to the box width", wide.style.transform, "scale(0.650)");
-  check("wide drawing: centred", wide.style.left === "-10.4px" && wide.style.top === "7.2px", true);
+  check("wide drawing: centred across, set down on the name", wide.style.left === "-10.4px" && wide.style.top === "24.8px", true);
+  const flat = fake(98, 67);
+  card._fitAppliance(flat);
+  check("flat drawing (a screen): not shrunk", flat.style.transform, "scale(1.000)");
+  check("flat drawing (a screen): set down on the name", flat.style.left === "0.0px" && flat.style.top === "25.0px", true);
   const usual = fake(96, 108);
   card._fitAppliance(usual);
   check("usual drawing: left alone", !usual.style.transform && !usual.style.left, true);

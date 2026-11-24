@@ -1798,7 +1798,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
   }
 
   // A drawing wider or taller than the others (an HRV and its ducts) is
-  // shrunk and centred in the same box.
+  // shrunk and centred across the same box; any drawing ends at its bottom.
   _fitAppliance(el) {
     const run = () => {
       const m = el.shadowRoot && el.shadowRoot.querySelector(".machine");
@@ -1812,7 +1812,9 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       // Undo the scale already applied to read the drawing at its own size.
       const W = mw / cur, H = mh / cur, X = mx / cur, Y = my / cur;
       const s = Math.min(1, IE_AC_W / W, IE_AC_H / H);
-      if (s >= 0.999) {
+      // A drawing as tall as the box stays where it is; a shorter one (a
+      // flat screen) is set down on the name, as the others are.
+      if (s >= 0.999 && H >= IE_AC_H - 1) {
         if (el._ieFit) { el.style.transform = el.style.transformOrigin = el.style.left = el.style.top = ""; el._ieFit = 0; }
         return;
       }
@@ -1820,7 +1822,7 @@ class IllustratedEnergyFlowCard extends HTMLElement {
       el.style.transformOrigin = "0 0";
       el.style.transform = `scale(${s.toFixed(3)})`;
       el.style.left = `${((IE_AC_W - W * s) / 2 - X * s).toFixed(1)}px`;
-      el.style.top = `${((IE_AC_H - H * s) / 2 - Y * s).toFixed(1)}px`;
+      el.style.top = `${(IE_AC_H - H * s - Y * s).toFixed(1)}px`;
     };
     if (typeof requestAnimationFrame === "function") requestAnimationFrame(run); else run();
   }
